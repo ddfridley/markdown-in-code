@@ -37,9 +37,11 @@ describe('comment Markdown policy', () => {
     expect(slices(source, 'marker')).toEqual(['**', '**']);
   });
 
-  it('keeps fenced and indented code raw, including language info and apparent headings', () => {
+  it('styles fenced code without parsing its Markdown and leaves indented code raw', () => {
     const source = '/**\n * ```ts\n * # raw\n * **raw**\n * ```\n *\n *     **also raw**\n */';
-    expect(parseComments(source)).toEqual([]);
+    expect(parseComments(source).every(item => item.style.startsWith('code'))).toBe(true);
+    expect(slices(source, 'codeFence')).toEqual(['```ts', '```']);
+    expect(parseComments('/*\n    **indented raw**\n*/')).toEqual([]);
   });
 
   it('respects escaping, nesting, variable-width code spans and GFM strike markers', () => {

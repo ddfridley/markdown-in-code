@@ -36,7 +36,7 @@ async function capture(name: string, width = 1200) {
     }
     void check();
   });
-  await writeFile(join(bridge, 'requests', `${name}.json`), JSON.stringify({ name, width, theme: name === 'block-dark' ? 'dark' : 'light' }));
+  await writeFile(join(bridge, 'requests', `${name}.json`), JSON.stringify({ name, width, theme: name.endsWith('-dark') ? 'dark' : 'light' }));
   await finished;
 }
 
@@ -100,5 +100,21 @@ export async function run() {
   await capture('standalone-light');
   await open('fenced.ts');
   await capture('fenced-light');
-  console.log('Visual fixtures: 6 captured');
+  await vscode.commands.executeCommand('workbench.view.explorer');
+  await capture('fenced-sidebar-light');
+  await vscode.workspace.getConfiguration('editor').update('minimap.enabled', true, vscode.ConfigurationTarget.Global);
+  await capture('fenced-minimap-light');
+  await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, vscode.ConfigurationTarget.Global);
+  await vscode.commands.executeCommand('workbench.action.closeSidebar');
+  await vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Dark Modern', vscode.ConfigurationTarget.Global);
+  if (vscode.window.activeColorTheme.kind !== vscode.ColorThemeKind.Dark) {
+    await new Promise<void>((resolve, reject) => {
+      const listener = vscode.window.onDidChangeActiveColorTheme(theme => {
+        if (theme.kind === vscode.ColorThemeKind.Dark) { clearTimeout(timer); listener.dispose(); resolve(); }
+      });
+      const timer = setTimeout(() => { listener.dispose(); reject(new Error('Fenced dark theme timed out')); }, 10000);
+    });
+  }
+  await capture('fenced-dark');
+  console.log('Visual fixtures: 9 captured');
 }

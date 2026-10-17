@@ -254,6 +254,40 @@ export async function run(): Promise<void> {
       assert.equal(inlineDocument.getText(), source);
       assert.equal(inlineDocument.isDirty, false);
     });
+    await test('fenced code gets contrasting tokens, restores after editing, and changes palette with the theme', async () => {
+      const source = 'const outside = 1;\n/**\n * ```ts\n * const value = "**literal**";\n * // a code comment\n * ```\n */';
+      const codePath = join(workspace, 'fenced.ts');
+      await writeFile(codePath, source);
+      const codeDocument = await vscode.workspace.openTextDocument(codePath);
+      const codeEditor = await vscode.window.showTextDocument(codeDocument);
+      const state = await waitFor(codeEditor, value => value.ranges.some(range => range.style === 'codeKeyword'));
+      assert.deepEqual(texts(codeEditor, state, 'codeKeyword'), ['const']);
+      assert.deepEqual(texts(codeEditor, state, 'codeString'), ['"**literal**"']);
+      assert.deepEqual(texts(codeEditor, state, 'codeFence'), ['```ts', '```']);
+      assert.deepEqual(texts(codeEditor, state, 'strong'), []);
+      const offset = source.indexOf('value');
+      assert.equal((await select(codeEditor, [[offset, offset]])).ranges.length, 0);
+      await select(codeEditor, [[0, 0]]);
+      const before = api.snapshot(codeEditor)!.sequence;
+      const disabled = waitFor(codeEditor, value => value.sequence > before && value.ranges.length === 0);
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await disabled;
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(codeEditor, value => value.ranges.some(range => range.style === 'codeKeyword'));
+      const originalTheme = vscode.workspace.getConfiguration('workbench').get<string>('colorTheme');
+      try {
+        await vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Light Modern', vscode.ConfigurationTarget.Global);
+        const light = await waitFor(codeEditor, value => value.codeAppearance === 'dark' && value.ranges.some(range => range.style === 'codeBackground'));
+        assert.equal(light.version, codeDocument.version);
+        await vscode.workspace.getConfiguration('workbench').update('colorTheme', 'Default Dark Modern', vscode.ConfigurationTarget.Global);
+        const dark = await waitFor(codeEditor, value => value.codeAppearance === 'light' && value.ranges.some(range => range.style === 'codeBackground'));
+        assert.equal(dark.version, light.version);
+      } finally {
+        await vscode.workspace.getConfiguration('workbench').update('colorTheme', originalTheme, vscode.ConfigurationTarget.Global);
+      }
+      assert.equal(codeDocument.getText(), source);
+      assert.equal(codeDocument.isDirty, false);
+    });
     console.log(`Integration checks: ${passed.length} passed (VS Code ${vscode.version})`);
   } finally {
     // Fixtures are in the runner's isolated workspace; leave logs for diagnosis.

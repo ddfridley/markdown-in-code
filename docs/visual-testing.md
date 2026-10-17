@@ -17,9 +17,9 @@ The environment is pinned by an amd64 Node image digest, Debian package snapshot
 
 Only the editor rectangle is captured, excluding title bars, tabs, paths and status bars. The right-side scrollbar and overview-ruler gutter are cropped out using their measured DOM bounds, including in the dark and narrow cases; no font-dependent fixed inset is assumed. Capture-only CSS hides the cursor and workbench notification overlays; it does not hide source text, frame decorations or selections. The suite waits for decoration application, the expected theme background, font loading, animation frames and three identical captures before recording an image. It does not approve a result based on a fixed sleep.
 
-## Baseline candidates for review
+## Reviewed baselines
 
-The initial six images were generated with the explicit update command and inspected during implementation. They remain **candidates for human review**, not an automatic approval of every visual choice. Open these images and review the fixture source alongside them:
+The nine images were generated with the explicit update command and inspected during implementation. On 2026-10-17, the user approved the fenced-code screenshots and confirmed the F5 behavior, including minimap-aware centering and uniform backgrounds. These checked-in images are the reviewed baseline for this slice. Future changes still require explicit image updates and review.
 
 | Case | Image | What to inspect |
 | --- | --- | --- |
@@ -28,7 +28,10 @@ The initial six images were generated with the explicit update command and inspe
 | Selected source | [block-selected-light.png](../tests/visual/baselines/block-selected-light.png) | Complete original comment, source markers and native selection highlight |
 | Narrow editor | [block-narrow-light.png](../tests/visual/baselines/block-narrow-light.png) | Horizontal rules reaching the viewport edge without clipping text |
 | Standalone runs | [standalone-light.png](../tests/visual/baselines/standalone-light.png) | Grouped `//` blocks, empty boundary rows and a trailing inline comment |
-| Fenced content | [fenced-light.png](../tests/visual/baselines/fenced-light.png) | Current raw fence/content presentation; contrasting code colors are deferred |
+| Fenced code in light theme | [fenced-light.png](../tests/visual/baselines/fenced-light.png) | Dark code band, labeled fence bars and simplified syntax colors |
+| Fenced code in dark theme | [fenced-dark.png](../tests/visual/baselines/fenced-dark.png) | Light code band and readable syntax colors |
+| Fenced code with sidebar | [fenced-sidebar-light.png](../tests/visual/baselines/fenced-sidebar-light.png) | Labels centered in the narrower editor and uniform backgrounds on blank/unprefixed rows |
+| Fenced code with minimap | [fenced-minimap-light.png](../tests/visual/baselines/fenced-minimap-light.png) | Language labels centered over the code band with both sidebar and minimap enabled |
 
 Fixtures live under `tests/visual/fixtures/`; they are separate from editable manual fixtures under `tests/fixtures/`. These visual fixtures, their layout settings and baseline images should be reviewed together.
 
@@ -47,7 +50,7 @@ npm run visual:update:docker
 npm run test:visual:docker
 ```
 
-The update command explicitly replaces the six expected PNGs and their environment metadata. It never runs as a fallback from comparison or in normal CI. Comparison mounts the expected-image directory read-only; only explicit updates can write it. Review the changed images, relevant source/settings and the before/after result, then commit the intended baseline files through the normal review process. Generating a candidate image does not constitute human approval.
+The update command explicitly replaces the nine expected PNGs and their environment metadata. It never runs as a fallback from comparison or in normal CI. Comparison mounts the expected-image directory read-only; only explicit updates can write it. Review the changed images, relevant source/settings and the before/after result, then commit the intended baseline files through the normal review process. Generating a candidate image does not constitute human approval.
 
 ## Prove the gate catches regressions
 
@@ -55,6 +58,6 @@ The update command explicitly replaces the six expected PNGs and their environme
 npm run test:visual:selftest:docker
 ```
 
-This makes two separate comparisons with isolated renderer mutations: hidden horizontal borders and frame markers shifted two pixels to the right. It succeeds only when each run exits with a comparison failure, all six captures finish, no infrastructure failure occurs, and at least one actual pixel diff is recorded. The mutation is never applied to extension source or used to update baselines. Both mutations were verified to fail five cases each; the source-revealing selection case remains unchanged. Unit tests additionally reject a missing baseline, missing one-pixel borders, shifted borders and dimension changes.
+This makes two separate comparisons with isolated renderer mutations: hidden horizontal borders and frame markers shifted two pixels to the right. It succeeds only when each run exits with a comparison failure, all nine captures finish, no infrastructure failure occurs, and at least one actual pixel diff is recorded. The mutation is never applied to extension source or used to update baselines. Both mutations were verified to fail eight cases each; the source-revealing selection case remains unchanged. Unit tests additionally reject a missing baseline, missing one-pixel borders, shifted borders and dimension changes.
 
-The local Windows Docker/Linux runs have passed all six ordinary comparisons and both rejection checks. The CI job is configured with the same container; its remote execution is not yet verified. Visual coverage is intentionally small: wrapped lines, additional fonts, tables and the deferred contrasting fenced-code feature need their own future cases.
+The local Windows Docker/Linux runs have passed all nine ordinary comparisons and both rejection checks. The CI job is configured with the same container; its remote execution is not yet verified. Visual coverage is intentionally small: wrapped lines, additional fonts, tables and additional fenced-code languages need their own future cases.

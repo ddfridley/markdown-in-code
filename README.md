@@ -2,11 +2,13 @@
 
 Phase 1 prototype of a VS Code extension for Markdown in JavaScript/TypeScript comments (including JSX/TSX). Standalone Markdown files are outside the initial scope.
 
-The prototype styles bold, italic, strikethrough, inline code, and block-comment headings. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions are provisional; extension-host and visual validation are later phases.
+The prototype styles bold, italic, strikethrough, inline code, and block-comment headings. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions have unit, extension-host and screenshot coverage.
 
-Block comments now display an open-right `┌─ / │ / └─` frame, with one column between the vertical stroke and Markdown content. Source comment delimiters/prefixes reappear during editing. See [frame behavior and manual checks](docs/comment-boxes.md), including mixed prefixes and compact inline blocks. Real extension-host checks cover these transitions; screenshot baseline comparisons are still pending.
+Block comments now display an open-right `┌─ / │ / └─` frame, with one column between the vertical stroke and Markdown content. Source comment delimiters/prefixes reappear during editing. See [frame behavior and manual checks](docs/comment-boxes.md), including mixed prefixes and compact inline blocks. Real extension-host checks cover these transitions; screenshot comparisons pass in the pinned Linux environment; the fenced-code screenshots and F5 behavior have been reviewed and approved.
 
 Horizontal borders reach the editor viewport's right edge. Two or more consecutive `//` comments with only whitespace to their left also form a framed Markdown block; trailing comments and isolated `//` lines remain inline.
+
+Fenced code uses an opposite light/dark background and simplified JavaScript/TypeScript syntax colors. Other fence languages use plain text. See [fenced-code behavior and manual checks](docs/fenced-code.md).
 
 For a Phase 1 manual check, open `tests/fixtures/comments.ts` in the development host:
 
@@ -14,7 +16,7 @@ For a Phase 1 manual check, open `tests/fixtures/comments.ts` in the development
 - Click inside a comment: its complete Markdown source should reappear for editing. Move the caret back into code: formatting should return.
 - Toggle rendering: comments should switch between source and formatting. Surrounding code and strings must remain visually unaffected, and rendering must never change the file contents.
 
-The leading comment `*` prefixes are stripped from parser input, so ` * # Comment heading` is recognized as a heading. The frame now replaces those prefixes in rendered block comments. Full Markdown rendering and automated visual layout verification remain later work.
+The leading comment `*` prefixes are stripped from parser input, so ` * # Comment heading` is recognized as a heading. The frame now replaces those prefixes in rendered block comments. Full Markdown rendering remains later work; the screenshot harness covers selected layouts.
 
 With Node.js 22 or newer installed:
 
@@ -38,7 +40,7 @@ F5 now starts the development host with `--inspect-extensions=9333` and then att
 
 ## Adapter boundary
 
-`src/comments.ts` uses the TypeScript compiler's syntax tree and comment trivia APIs rather than a regular expression over source text. Each comment is parsed separately. Line comments do not join into Markdown blocks. Block comments remove delimiters and conventional leading `*` prefixes; indentation after those prefixes remains meaningful Markdown indentation. Unterminated block comments extend to EOF as recognized by the compiler.
+`src/comments.ts` uses the TypeScript compiler's syntax tree and comment trivia APIs rather than a regular expression over source text. Each comment is parsed separately. Adjacent standalone line comments join into Markdown blocks. Block comments remove delimiters and conventional leading `*` prefixes; indentation after those prefixes remains meaningful Markdown indentation. Unterminated block comments extend to EOF as recognized by the compiler.
 
 `src/markdown.ts` parses normalized comment text with unified, remark-parse and remark-gfm, then emits UTF-16 offset ranges. The mapping splits multiline ranges into content-only spans, excluding comment delimiters, stripped prefixes and line endings. The extension applies decorations only; it never edits document text. Parsing is cached by document URI and version, so cursor changes only filter existing ranges.
 
@@ -50,6 +52,6 @@ Selective adaptation is the chosen reuse strategy: keep extraction, mapping, par
 
 Unit tests cover comment extraction and computed ranges. `npm run test:integration` runs real VS Code extension-host behavior checks. The separate pinned Linux screenshot harness checks painted editor output. See [testing instructions](docs/testing.md) for the test applications, isolated sessions and CI configuration.
 
-The screenshot harness is now available: `npm run test:visual:docker` compares six editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Expected-image updates are explicit and require review; missing baselines fail.
+The screenshot harness is now available: `npm run test:visual:docker` compares nine editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Expected-image updates are explicit and require review; missing baselines fail.
 
 Phase 2's [behavior contract](docs/behavior.md) specifies comment types, selection boundaries, multiple carets, split editors, toggling, cache updates, and the raw presentation of deferred Markdown features. Use `tests/fixtures/behavior.ts` for its manual checks.

@@ -15,7 +15,7 @@ const update = process.argv.includes('--update');
 const mutation = process.argv.find(argument => argument.startsWith('--mutation='))?.slice(11);
 if (mutation && !['missing-border', 'offset'].includes(mutation)) throw new Error('Unknown visual mutation');
 if (update && mutation) throw new Error('Cannot approve a deliberately mutated image');
-const names = new Set(['block-light', 'block-selected-light', 'block-narrow-light', 'block-dark', 'standalone-light', 'fenced-light']);
+const names = new Set(['block-light', 'block-selected-light', 'block-narrow-light', 'block-dark', 'standalone-light', 'fenced-light', 'fenced-sidebar-light', 'fenced-minimap-light', 'fenced-dark']);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const artifact = resolve(root, '.vscode-test/visual-artifacts', `${Date.now()}${mutation ? '-mutation' : update ? '-update' : ''}`);
 const session = resolve(root, '.vscode-test/visual-session');
@@ -50,7 +50,7 @@ async function scan() {
       try {
         if (!names.has(request.name) || ![850, 1200].includes(request.width)) throw new Error('Unexpected capture request');
         cdp ??= await connect(port);
-        if (request.theme !== (request.name === 'block-dark' ? 'dark' : 'light')) throw new Error('Unexpected capture theme');
+        if (request.theme !== (request.name.endsWith('-dark') ? 'dark' : 'light')) throw new Error('Unexpected capture theme');
         const actual = join(artifact, `${request.name}.actual.png`);
         await writeFile(actual, await captureEditor(cdp, request.width, mutation, request.theme));
         const expected = join(baseline, `${request.name}.png`);

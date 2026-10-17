@@ -2,9 +2,10 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import { extractComments, mapRange, type Span, type CommentRegion } from './comments';
+import { fencedCode, type CodeStyle } from './fenced-code';
 
-export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker';
-export interface Decoration extends Span { style: Style; region: CommentRegion }
+export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | CodeStyle;
+export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string }
 const processor = unified().use(remarkParse).use(remarkGfm);
 
 /** Small AST-to-range adapter inspired by MIEV; offsets remain UTF-16 throughout. */
@@ -19,7 +20,10 @@ export function parseComments(source: string, fileName?: string, regions = extra
       const start = node.position?.start.offset;
       const end = node.position?.end.offset;
       if (start !== undefined && end !== undefined) {
-        if (node.type === 'strong' || node.type === 'emphasis' || node.type === 'delete') {
+        if (node.type === 'code') {
+          const language = 'lang' in node && typeof node.lang === 'string' ? node.lang : undefined;
+          decorations.push(...fencedCode(source, region, { start, end }, language));
+        } else if (node.type === 'strong' || node.type === 'emphasis' || node.type === 'delete') {
           const width = node.type === 'emphasis' ? 1 : node.type === 'delete'
             ? /^~+/.exec(region.markdown.slice(start, end))![0].length : 2;
           add(node.type, start + width, end - width);
@@ -45,7 +49,7 @@ export function parseComments(source: string, fileName?: string, regions = extra
           }
         }
       }
-      // Code and HTML nodes have no Markdown children and are deliberately left raw.
+      // Code and HTML nodes have no Markdown children: never style Markdown inside them.
       if ('children' in node) for (const child of node.children ?? []) walk(child as Parameters<typeof walk>[0]);
     }
     walk(tree);
