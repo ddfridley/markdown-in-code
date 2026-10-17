@@ -98,6 +98,8 @@ export async function run() {
   }
   await open('standalone.ts');
   await capture('standalone-light');
+  await open('horizontal-rules.ts');
+  await capture('horizontal-rules-light');
   await open('fenced.ts');
   await capture('fenced-light');
   await vscode.commands.executeCommand('workbench.view.explorer');
@@ -116,5 +118,5 @@ export async function run() {
     });
   }
   await capture('fenced-dark');
-  console.log('Visual fixtures: 9 captured');
+  console.log('Visual fixtures: 10 captured');
 }

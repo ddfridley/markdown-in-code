@@ -15,7 +15,7 @@ const update = process.argv.includes('--update');
 const mutation = process.argv.find(argument => argument.startsWith('--mutation='))?.slice(11);
 if (mutation && !['missing-border', 'offset'].includes(mutation)) throw new Error('Unknown visual mutation');
 if (update && mutation) throw new Error('Cannot approve a deliberately mutated image');
-const names = new Set(['block-light', 'block-selected-light', 'block-narrow-light', 'block-dark', 'standalone-light', 'fenced-light', 'fenced-sidebar-light', 'fenced-minimap-light', 'fenced-dark']);
+const names = new Set(['block-light', 'block-selected-light', 'block-narrow-light', 'block-dark', 'standalone-light', 'horizontal-rules-light', 'fenced-light', 'fenced-sidebar-light', 'fenced-minimap-light', 'fenced-dark']);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const artifact = resolve(root, '.vscode-test/visual-artifacts', `${Date.now()}${mutation ? '-mutation' : update ? '-update' : ''}`);
 const session = resolve(root, '.vscode-test/visual-session');

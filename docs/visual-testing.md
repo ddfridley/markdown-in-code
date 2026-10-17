@@ -19,7 +19,7 @@ Only the editor rectangle is captured, excluding title bars, tabs, paths and sta
 
 ## Reviewed baselines
 
-The nine images were generated with the explicit update command and inspected during implementation. On 2026-10-17, the user approved the fenced-code screenshots and confirmed the F5 behavior, including minimap-aware centering and uniform backgrounds. These checked-in images are the reviewed baseline for this slice. Future changes still require explicit image updates and review.
+The ten images were generated with the explicit update command and inspected during implementation. On 2026-10-17, the user approved the fenced-code presentation and horizontal-rule slice after F5 testing, including minimap-aware centering and uniform backgrounds. These checked-in images are the reviewed baselines. Future changes still require explicit image updates and review.
 
 | Case | Image | What to inspect |
 | --- | --- | --- |
@@ -32,6 +32,8 @@ The nine images were generated with the explicit update command and inspected du
 | Fenced code in dark theme | [fenced-dark.png](../tests/visual/baselines/fenced-dark.png) | Light code band and readable syntax colors |
 | Fenced code with sidebar | [fenced-sidebar-light.png](../tests/visual/baselines/fenced-sidebar-light.png) | Labels centered in the narrower editor and uniform backgrounds on blank/unprefixed rows |
 | Fenced code with minimap | [fenced-minimap-light.png](../tests/visual/baselines/fenced-minimap-light.png) | Language labels centered over the code band with both sidebar and minimap enabled |
+
+The reviewed tenth image, [horizontal-rules-light.png](../tests/visual/baselines/horizontal-rules-light.png), covers thematic breaks in block and grouped line comments and a literal same-line comment. It was approved with the horizontal-rule slice.
 
 Fixtures live under `tests/visual/fixtures/`; they are separate from editable manual fixtures under `tests/fixtures/`. These visual fixtures, their layout settings and baseline images should be reviewed together.
 
@@ -50,7 +52,7 @@ npm run visual:update:docker
 npm run test:visual:docker
 ```
 
-The update command explicitly replaces the nine expected PNGs and their environment metadata. It never runs as a fallback from comparison or in normal CI. Comparison mounts the expected-image directory read-only; only explicit updates can write it. Review the changed images, relevant source/settings and the before/after result, then commit the intended baseline files through the normal review process. Generating a candidate image does not constitute human approval.
+The update command explicitly replaces the ten expected PNGs and their environment metadata. It never runs as a fallback from comparison or in normal CI. Comparison mounts the expected-image directory read-only; only explicit updates can write it. Review the changed images, relevant source/settings and the before/after result, then commit the intended baseline files through the normal review process. Generating a candidate image does not constitute human approval.
 
 ## Prove the gate catches regressions
 
@@ -58,6 +60,6 @@ The update command explicitly replaces the nine expected PNGs and their environm
 npm run test:visual:selftest:docker
 ```
 
-This makes two separate comparisons with isolated renderer mutations: hidden horizontal borders and frame markers shifted two pixels to the right. It succeeds only when each run exits with a comparison failure, all nine captures finish, no infrastructure failure occurs, and at least one actual pixel diff is recorded. The mutation is never applied to extension source or used to update baselines. Both mutations were verified to fail eight cases each; the source-revealing selection case remains unchanged. Unit tests additionally reject a missing baseline, missing one-pixel borders, shifted borders and dimension changes.
+This makes two separate comparisons with isolated renderer mutations: hidden horizontal borders and frame markers shifted two pixels to the right. It succeeds only when each run exits with a comparison failure, all ten captures finish, no infrastructure failure occurs, and at least one actual pixel diff is recorded. The mutation is never applied to extension source or used to update baselines. Both mutations were verified to fail nine cases each; the source-revealing selection case remains unchanged. Unit tests additionally reject a missing baseline, missing one-pixel borders, shifted borders and dimension changes.
 
-The local Windows Docker/Linux runs have passed all nine ordinary comparisons and both rejection checks. The CI job is configured with the same container; its remote execution is not yet verified. Visual coverage is intentionally small: wrapped lines, additional fonts, tables and additional fenced-code languages need their own future cases.
+The local Windows Docker/Linux runs have passed all ten ordinary comparisons and both rejection checks. The CI job is configured with the same container; its remote execution is not yet verified. Visual coverage is intentionally small: wrapped lines, additional fonts, tables and additional fenced-code languages need their own future cases.

@@ -36,7 +36,7 @@ export async function captureEditor(cdp, width, mutation, theme) {
     if (!document.getElementById('mic-visual-style')) {
       const style = document.createElement('style'); style.id = 'mic-visual-style';
       style.textContent = '.monaco-editor .cursor { visibility: hidden !important; } .notifications-toasts, .notifications-center { display: none !important; }' +
-        ${JSON.stringify(mutation === 'missing-border' ? '[class*="TextEditorDecorationType"]::after { border-color: transparent !important; }'
+        ${JSON.stringify(mutation === 'missing-border' ? '[class*="TextEditorDecorationType"]::before, [class*="TextEditorDecorationType"]::after { border-color: transparent !important; }'
           : mutation === 'offset' ? '[class*="TextEditorDecorationType"]::before { transform: translateX(2px) !important; }' : '')};
       document.head.appendChild(style);
     }

@@ -31,10 +31,11 @@ describe('comment Markdown policy', () => {
     expect(slices('/* before <!-- *hidden* --> **visible** */', 'emphasis')).toEqual([]);
   });
 
-  it('keeps list markers and horizontal rules raw while formatting list text', () => {
+  it('keeps list markers while rendering horizontal rules and formatting list text', () => {
     const source = '/**\n * - **item**\n *\n * ---\n */';
     expect(slices(source, 'strong')).toEqual(['item']);
     expect(slices(source, 'marker')).toEqual(['**', '**']);
+    expect(slices(source, 'horizontalRule')).toEqual(['---']);
   });
 
   it('styles fenced code without parsing its Markdown and leaves indented code raw', () => {

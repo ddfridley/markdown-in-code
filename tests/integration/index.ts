@@ -288,6 +288,25 @@ export async function run(): Promise<void> {
       assert.equal(codeDocument.getText(), source);
       assert.equal(codeDocument.isDirty, false);
     });
+    await test('horizontal rules render only in framed comments and follow reveal and toggle state', async () => {
+      const source = 'const outside = 1;\n/**\n * Before\n *\n * ---\n *\n * After\n */\nconst inline = 1; /* --- */';
+      const path = join(workspace, 'horizontal-rules.ts');
+      await writeFile(path, source);
+      const document = await vscode.workspace.openTextDocument(path);
+      const editor = await vscode.window.showTextDocument(document);
+      editor.selection = new vscode.Selection(0, 0, 0, 0);
+      const rendered = await waitFor(editor, state => texts(editor, state, 'horizontalRule').length === 1);
+      assert.deepEqual(texts(editor, rendered, 'horizontalRule'), ['---']);
+      const offset = source.indexOf('---');
+      assert.equal((await select(editor, [[offset, offset]])).ranges.length, 0);
+      assert.deepEqual(texts(editor, await select(editor, [[0, 0]]), 'horizontalRule'), ['---']);
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => state.ranges.length === 0);
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => texts(editor, state, 'horizontalRule').length === 1);
+      assert.equal(document.getText(), source);
+      assert.equal(document.isDirty, false);
+    });
     console.log(`Integration checks: ${passed.length} passed (VS Code ${vscode.version})`);
   } finally {
     // Fixtures are in the runner's isolated workspace; leave logs for diagnosis.

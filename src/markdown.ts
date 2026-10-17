@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { extractComments, mapRange, type Span, type CommentRegion } from './comments';
 import { fencedCode, type CodeStyle } from './fenced-code';
 
-export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | CodeStyle;
+export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | CodeStyle;
 export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string }
 const processor = unified().use(remarkParse).use(remarkGfm);
 
@@ -23,6 +23,8 @@ export function parseComments(source: string, fileName?: string, regions = extra
         if (node.type === 'code') {
           const language = 'lang' in node && typeof node.lang === 'string' ? node.lang : undefined;
           decorations.push(...fencedCode(source, region, { start, end }, language));
+        } else if (node.type === 'thematicBreak' && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
+          add('horizontalRule', start, end);
         } else if (node.type === 'strong' || node.type === 'emphasis' || node.type === 'delete') {
           const width = node.type === 'emphasis' ? 1 : node.type === 'delete'
             ? /^~+/.exec(region.markdown.slice(start, end))![0].length : 2;

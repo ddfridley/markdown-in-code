@@ -28,6 +28,12 @@ MIEV brings a more mature Markdown parser and broader Markdown features, includi
 
 ### Current implementation status
 
+The fenced-code slice is committed as `5809e19`. The user approved the horizontal-rule slice after manual testing on 2026-10-17; the completed slice includes source, tests, docs and its reviewed screenshot. Verified checks: type checking/build, 54 unit tests, 15 real VS Code checks, ten screenshot comparisons and both deliberate regression checks. Heading typography and layout are next, as requested, before adding more block features. See the ordered feature-slice plan in Phase 5 below.
+
+#### Earlier implementation milestones
+
+The entries below record earlier states; the current status and Phase 5 feature order supersede their old next steps and deferred-feature notes.
+
 2026-10-17: the user approved the fenced-code screenshots and confirmed F5 rendering works, including minimap centering and consistent backgrounds. This slice passes type checking/build, 50 unit tests, 14 real VS Code checks, nine screenshot comparisons and both intentional regression checks. Next feature slice: render Markdown horizontal rules within framed comments, while preserving raw editing, source text and literal code/HTML contexts.
 
 Fixed language-label centering with the minimap enabled: the query container now uses the text viewport rather than its wider scrollable parent. Added a ninth screenshot with both sidebar and minimap enabled. Background fixes remain in place.
@@ -123,12 +129,34 @@ The launcher now records the project, port and inspector target ID in an ignored
 
 ### 5. Expand in small feature slices
 
-**Implemented feature: fenced code inside block comments.** Opposite light/dark appearance, readable syntax colors, language aliases and plain-code fallback are implemented with source-preserving decorations. Fence runs hide while their rows and language label remain. Unit, real VS Code interaction/theme checks and light/dark screenshots cover this slice. See `docs/fenced-code.md` for supported syntax and limitations.
+**Completed and manually approved:** comment frames, grouped standalone comments, base inline formatting, fenced code with opposite-theme syntax colors and labeled bars, and Markdown horizontal rules. Heading recognition exists, but titles still use the editor's font size and Setext underlines remain visible.
 
-- Implement one behavior slice at a time: comment extraction/mapping, base inline formatting, block Markdown, edit/selection behavior, then advanced Markdown features.
-- For each slice, add a focused parser/unit test, an integration assertion where state crosses the VS Code boundary, and a screenshot only when the risk is genuinely visual.
-- Run focused checks after each change, then the complete validation suite before release.
-- Keep the user-facing feature list honest about VS Code decoration limits (line-height changes, joined lines, and true inline images are not equivalent to rendered HTML).
+**Next: headings (headers).** Finish heading typography and settle its layout effects before increasing the number of rendered block features. This order was requested by the user on 2026-10-17. The remaining sequence is a working implementation order; later advanced features depend on the layout findings rather than a promise that editor decorations can reproduce HTML.
+
+| Order | Slice | Scope and completion check |
+| --- | --- | --- |
+| 1 | Headings and shared layout | ATX levels 1–6, Setext levels 1–2, marker hiding and a visible level hierarchy. Establish how larger text interacts with editor rows, frames, code bands and rules. Complete the feasibility and regression work below before other block slices. |
+| 2 | Unordered lists | Replace recognized list markers with bullets; preserve nested indentation, inline formatting, continuation lines and meaningful stars. Test all comment-prefix forms against the heading layout. |
+| 3 | Ordered lists and task lists | Define number presentation, starting values and nested alignment; display checked/unchecked tasks while retaining source editing as the interaction. Preserve code and escaped markers. |
+| 4 | Blockquotes | Render quote markers and nested quotes with a consistent inset/bar; verify quotes containing headings, lists, code and rules. Reuse the established layout policy. |
+| 5 | Links and autolinks | Define readable label/destination presentation and explicit link activation without breaking click-to-edit. Cover nested inline formatting, references and literal code contexts. |
+| 6 | HTML comments in Markdown | Decide the rendered presentation for embedded HTML comments and hide their structural markers where appropriate. Keep actual source-comment extraction separate and retain literal editing. General HTML rendering remains outside this slice. |
+| 7 | GFM tables | First prove column alignment, escaped pipes, inline formatting and narrow-viewport behavior within editor layout limits. Implement only the tested presentation; document fallbacks for unsupported layouts. |
+| 8 | Images and richer blocks | Investigate image labels/previews and explicit fallbacks first. Math, Mermaid and other embedded renderers require separate feasibility decisions and individual slices; they are not implicitly included. |
+| 9 | More source languages | Add one language adapter at a time after the rendering contract stabilizes. Each needs compiler/tokenizer-backed comment extraction, delimiter/prefix mapping and syntax-context tests. |
+| 10 | Release hardening | Verify wrapping, tabs, fonts, zoom, high contrast, minimap, split editors, horizontal scrolling and large-file performance across implemented features. Run the configured cross-platform CI, finalize packaging/docs and review remaining limitations. |
+
+#### Heading slice implementation plan
+
+1. **Define the heading contract.** ATX headings get levels 1–6; Setext headings get levels 1–2. Both hide their Markdown structural markers while rendered, including optional closing hashes. Keep inline emphasis/code inside headings, preserve literal/escaped examples, and limit block heading presentation to framed comments. Source text, click/selection reveal, toggle and independent split-editor state remain unchanged.
+2. **Prototype typography before committing to a scale.** Try a clear descending size hierarchy, starting with H1 at 1.5×, H2 at 1.3×, H3 at 1.15× and H4–H6 at editor size with weight/color distinctions. These are starting values for visual review, not a final contract. VS Code's supported decoration API has no font-size or per-line-height option. Evaluate the CSS-based approach against the pinned VS Code version and F5, including whether glyphs overlap or clip. Do not mistake larger glyphs for an actual increase in editor row height, and do not change the user's global line-height setting to make the demo pass.
+3. **Choose and document a feasible shared layout.** Preserve source rows and source-to-decoration mapping. Determine how heading baselines, bounds and any spacing fit the editor row grid. If larger text cannot render safely, record the measured limitation and a concrete fallback/alternative before extending other block features; keep that decision explicit rather than silently retaining same-size headings. Resolve Setext underline-row presentation without changing source or breaking cursor positions.
+4. **Regress existing blocks immediately.** Put headings immediately before/after fenced code and horizontal rules, plus adjacent headings and headings at comment-frame edges. Check frame joins, one-column inset, code backgrounds/bars, label centering, selections, toggles and restoration. Include light/dark themes, sidebar/minimap, narrow and split editors, default/custom line heights, zoom, tabs, LF/CRLF and wrapped/long titles. Reuse existing fixtures where possible; add focused mixed-block cases before expanding the gallery further.
+5. **Validate and review.** Unit tests must cover levels, ATX/Setext distinction, marker mapping, nested formatting and code/HTML exclusions. Real VS Code checks must cover reveal/restoration, edits, toggling and source preservation. Screenshot tests must demonstrate the chosen hierarchy and mixed-block layout; intentional regressions must still fail. Document exact F5 lines, record user review, and commit the completed slice before beginning lists.
+
+**Heading exit criterion:** the agreed heading hierarchy renders without clipping, overlap, misplaced frames or regressions in existing code/rules, with an explicit documented decision about row-height limitations. The current same-size behavior remains the implementation until this slice is built and verified.
+
+For every later slice, define its behavior first, add focused mapping tests, add real VS Code assertions where editor state changes, and add screenshots for visual risks. Run focused checks during implementation and the complete validation suite before release. Keep standalone `.md` support and Escape-to-render interaction deferred as already agreed.
 
 ## Regression Test Layers
 

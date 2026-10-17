@@ -2,7 +2,7 @@
 
 Phase 1 prototype of a VS Code extension for Markdown in JavaScript/TypeScript comments (including JSX/TSX). Standalone Markdown files are outside the initial scope.
 
-The prototype styles bold, italic, strikethrough, inline code, and block-comment headings. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions have unit, extension-host and screenshot coverage.
+The prototype styles bold, italic, strikethrough, inline code, block-comment headings, and Markdown horizontal rules. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions have unit, extension-host and screenshot coverage.
 
 Block comments now display an open-right `┌─ / │ / └─` frame, with one column between the vertical stroke and Markdown content. Source comment delimiters/prefixes reappear during editing. See [frame behavior and manual checks](docs/comment-boxes.md), including mixed prefixes and compact inline blocks. Real extension-host checks cover these transitions; screenshot comparisons pass in the pinned Linux environment; the fenced-code screenshots and F5 behavior have been reviewed and approved.
 
@@ -52,6 +52,8 @@ Selective adaptation is the chosen reuse strategy: keep extraction, mapping, par
 
 Unit tests cover comment extraction and computed ranges. `npm run test:integration` runs real VS Code extension-host behavior checks. The separate pinned Linux screenshot harness checks painted editor output. See [testing instructions](docs/testing.md) for the test applications, isolated sessions and CI configuration.
 
-The screenshot harness is now available: `npm run test:visual:docker` compares nine editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Expected-image updates are explicit and require review; missing baselines fail.
+The screenshot harness is now available: `npm run test:visual:docker` compares ten editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Expected-image updates are explicit and require review; missing baselines fail.
 
 Phase 2's [behavior contract](docs/behavior.md) specifies comment types, selection boundaries, multiple carets, split editors, toggling, cache updates, and the raw presentation of deferred Markdown features. Use `tests/fixtures/behavior.ts` for its manual checks.
+
+See [horizontal-rule behavior and manual checks](docs/horizontal-rules.md) for the reviewed slice. The [feature-slice plan](PLAN.md#5-expand-in-small-feature-slices) puts heading typography and layout next, before adding more block features.

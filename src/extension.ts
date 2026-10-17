@@ -17,7 +17,12 @@ export function activate(context: vscode.ExtensionContext) {
     delete: { textDecoration: 'line-through' },
     inlineCode: { backgroundColor: new vscode.ThemeColor('textCodeBlock.background') },
     heading: { fontWeight: 'bold', color: new vscode.ThemeColor('textLink.foreground') },
-    marker: { opacity: '0', letterSpacing: '-1em' }
+    marker: { opacity: '0', letterSpacing: '-1em' },
+    horizontalRule: { color: 'transparent', before: {
+      contentText: '', width: '100vw', height: '0px',
+      border: '0.5px solid', borderColor: new vscode.ThemeColor('editorLineNumber.foreground'),
+      margin: '0 -100vw 0.3em 0'
+    } }
   };
   const types = new Map(Object.entries(options).map(([style, value]) => [style as Style, vscode.window.createTextEditorDecorationType({ ...value, rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed })]));
   context.subscriptions.push(...types.values());

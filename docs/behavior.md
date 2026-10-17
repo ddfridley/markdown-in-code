@@ -1,6 +1,6 @@
 # Comment rendering behavior
 
-This is the Phase 2 contract for the initial extension. Pure parser and rendering-session tests enforce the rules, Phase 3 checks real VS Code event wiring and decoration updates, and Phase 4 now compares nine pinned Linux editor captures. See `docs/visual-testing.md` for coverage, limitations and the baseline review gallery.
+This is the Phase 2 contract for the initial extension. Pure parser and rendering-session tests enforce the rules, Phase 3 checks real VS Code event wiring and decoration updates, and Phase 4 now compares ten pinned Linux editor captures. See `docs/visual-testing.md` for coverage, limitations and the baseline review gallery.
 
 ## Scope and syntax
 
@@ -15,7 +15,8 @@ This is the Phase 2 contract for the initial extension. Pure parser and renderin
 | Inline code | Hide matching backtick runs and apply a background; apparent Markdown inside stays literal. Preserve source spacing rather than reproducing HTML whitespace normalization. |
 | Block-comment ATX headings | Hide opening hashes and optional closing hashes, and style the title bold with a theme color. Keep the editor's font size. |
 | Setext headings | Recognize and color the range; underline markers remain raw. Complete heading presentation is deferred. |
-| Lists and horizontal rules | Keep structural markers raw. Recognized inline formatting inside list items can render. Bullet replacement, numbering and rule drawing are later feature slices. |
+| Lists | Keep structural markers raw. Recognized inline formatting inside list items can render. Bullet replacement and numbering remain later slices. |
+| Horizontal rules | Render parser-recognized thematic breaks as theme-colored lines to the editor edge inside framed comments. Editing reveals source. Code, HTML, escaped markers and Setext headings retain their existing behavior. See [manual checks](horizontal-rules.md). |
 | HTML comments inside Markdown | Preserve their syntax and content without interpreting contained Markdown. An HTML block also suppresses Markdown according to remark's block rules. |
 | Fenced code | Opposite light/dark background, simplified JS/TS colors and plain-code fallback. Replace fence rows with code-colored bars and expand the opening language label. No nested Markdown styling. See [fenced-code behavior](fenced-code.md). |
 | Indented code | Keep syntax and content raw, without nested Markdown styling. |
@@ -44,7 +45,7 @@ All Markdown positions and source offsets use UTF-16. LF and CRLF map to equival
 
 For these manual checks, open `tests/fixtures/behavior.ts` in the **Extension Development Host** window. “Caret” means the blinking text cursor, not a typed `^` character. Line numbers below refer to this fixture. Use **Ctrl+G**, enter a line number, and press Enter to move there.
 
-1. **Rendered formatting:** click line 1 immediately before `const` (column 1). Line 4 should show a bold, colored heading without its `#`; line 5 should show italic `word`, crossed-out `strike`, and an inline-code background. Line 7's dash, line 9's rule and line 11's HTML comment stay raw. Lines 13–15 use a contrasting code background; fence markers hide and apparent Markdown in code stays literal. The string on line 1 must keep its literal `**` characters.
+1. **Rendered formatting:** click line 1 immediately before `const` (column 1). Line 4 should show a bold, colored heading without its `#`; line 5 should show italic `word`, crossed-out `strike`, and an inline-code background. Line 7's list dash and line 11's HTML comment stay raw. Line 9 displays a horizontal rule. Lines 13–15 use a contrasting code background; fence markers hide and apparent Markdown in code stays literal. The string on line 1 must keep its literal `**` characters.
 2. **Reveal a comment:** click line 4 immediately before `Heading`. The whole comment on lines 3–16 should show its original Markdown markers. Click line 1 before `const` again; formatting should return.
 3. **Select across comments:** click line 1 before `const`, then hold Shift and click line 25 before `const`. Both block comments and the standalone comment on line 24 should reveal their Markdown markers. The trailing comment on line 25 is outside this selection. Click line 1 without Shift to clear the selection and restore formatting.
 4. **Toggle and edit:** with the cursor on line 1, press Ctrl+Shift+P and run **Markdown in Code: Toggle Rendering**. All Markdown markers should become visible. On line 24 change `bold` to `updated`, keeping the surrounding `**`. Run the toggle command again, then click line 1 before `const`. Line 24 should render `updated` in bold. Undo the text edit afterward if desired.
