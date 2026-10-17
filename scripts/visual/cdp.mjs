@@ -37,7 +37,8 @@ export async function captureEditor(cdp, width, mutation, theme) {
       const style = document.createElement('style'); style.id = 'mic-visual-style';
       style.textContent = '.monaco-editor .cursor { visibility: hidden !important; } .notifications-toasts, .notifications-center { display: none !important; }' +
         ${JSON.stringify(mutation === 'missing-border' ? '[class*="TextEditorDecorationType"]::before, [class*="TextEditorDecorationType"]::after { border-color: transparent !important; }'
-          : mutation === 'offset' ? '[class*="TextEditorDecorationType"]::before { transform: translateX(2px) !important; }' : '')};
+          : mutation === 'offset' ? '[class*="TextEditorDecorationType"]::before { transform: translateX(2px) !important; }'
+          : mutation === 'heading-size' ? '[class*="TextEditorDecorationType"] { font-size: 16px !important; }' : '')};
       document.head.appendChild(style);
     }
   })()` });

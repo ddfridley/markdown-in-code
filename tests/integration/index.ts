@@ -208,7 +208,8 @@ export async function run(): Promise<void> {
       const boxDocument = await vscode.workspace.openTextDocument(boxPath);
       const boxEditor = await vscode.window.showTextDocument(boxDocument);
       const state = await waitFor(boxEditor, value => value.boxes.length === 6);
-      assert.deepEqual(state.ranges, []);
+      assert.ok(state.ranges.every(value => value.style === 'commentText'));
+      assert.deepEqual(texts(boxEditor, state, 'commentText').map(value => value.trim()).filter(Boolean), ['first', 'second', 'third', 'fourth']);
       assert.equal(state.boxes.filter(box => box.text === '│ ').length, 4);
       const version = boxDocument.version;
       const sequence = state.sequence;
@@ -306,6 +307,45 @@ export async function run(): Promise<void> {
       await waitFor(editor, state => texts(editor, state, 'horizontalRule').length === 1);
       assert.equal(document.getText(), source);
       assert.equal(document.isDirty, false);
+    });
+    await test('heading levels, Setext markers, row budgets and edits preserve interaction state', async () => {
+      const source = 'const outside = 1;\n/**\n * # Title\n * ## Second\n *\n * Setext\n * ===\n */';
+      const path = join(workspace, 'headings.ts');
+      await writeFile(path, source);
+      const document = await vscode.workspace.openTextDocument(path);
+      const editor = await vscode.window.showTextDocument(document);
+      const rendered = await waitFor(editor, state => state.ranges.filter(value => value.style === 'heading').length === 3);
+      assert.deepEqual(rendered.ranges.filter(value => value.style === 'heading').map(value => value.level), [1, 2, 1]);
+      assert.ok(texts(editor, rendered, 'marker').includes('==='));
+      assert.equal((await select(editor, [[source.indexOf('Title'), source.indexOf('Title')]])).ranges.length, 0);
+      await select(editor, [[0, 0]]);
+      const settings = vscode.workspace.getConfiguration('editor');
+      const original = Object.fromEntries(['fontSize', 'lineHeight', 'wordWrap'].map(key => [key, settings.inspect(key)?.workspaceValue]));
+      try {
+        await settings.update('wordWrap', 'off', vscode.ConfigurationTarget.Workspace);
+        await settings.update('fontSize', 16, vscode.ConfigurationTarget.Workspace);
+        await settings.update('lineHeight', 32, vscode.ConfigurationTarget.Workspace);
+        const enlarged = await waitFor(editor, state => state.headingSizes[0] === 24);
+        assert.equal(enlarged.version, document.version);
+        await settings.update('lineHeight', 16, vscode.ConfigurationTarget.Workspace);
+        await waitFor(editor, state => state.headingSizes[0] === 24 && state.headingSizes[1] === 20);
+        await settings.update('lineHeight', 32, vscode.ConfigurationTarget.Workspace);
+        await settings.update('wordWrap', 'on', vscode.ConfigurationTarget.Workspace);
+        await waitFor(editor, state => state.headingSizes[0] === 24 && state.headingSizes[1] === 20);
+        assert.equal(document.getText(), source);
+        assert.equal(document.isDirty, false);
+        await vscode.commands.executeCommand('markdownInCode.toggle');
+        await waitFor(editor, state => state.ranges.length === 0);
+        await vscode.commands.executeCommand('markdownInCode.toggle');
+        await waitFor(editor, state => state.ranges.some(value => value.style === 'heading'));
+        const position = document.positionAt(source.indexOf('# Title'));
+        await editor.edit(edit => edit.insert(position, '#'));
+        const edited = await waitFor(editor, state => state.version === document.version && state.ranges.filter(value => value.style === 'heading')[0]?.level === 2);
+        assert.ok(texts(editor, edited, 'heading').includes('Title'));
+        assert.equal(document.getText(), source.replace('# Title', '## Title'));
+      } finally {
+        for (const key of Object.keys(original)) await settings.update(key, original[key], vscode.ConfigurationTarget.Workspace);
+      }
     });
     console.log(`Integration checks: ${passed.length} passed (VS Code ${vscode.version})`);
   } finally {

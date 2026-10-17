@@ -1,0 +1,22 @@
+import { mkdir, readFile, writeFile, copyFile } from 'node:fs/promises';
+import { resolve, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+
+const root = fileURLToPath(new URL('../', import.meta.url));
+const directory = resolve(root, '.vscode-test/heading-contract-mutations', `${Date.now()}`);
+await mkdir(join(directory, 'src'), { recursive: true });
+await mkdir(join(directory, 'tests/contracts'), { recursive: true });
+const source = await readFile(resolve(root, 'src/headings.ts'), 'utf8');
+const mutated = source.replace('[1.5, 1.25, 1, 0.95, 0.9, 0.85]', '[1, 1, 1, 0.95, 0.9, 0.85]');
+if (mutated === source) throw new Error('Unable to introduce the intended heading-size regression');
+await writeFile(join(directory, 'src/headings.ts'), mutated);
+await copyFile(resolve(root, 'tests/heading-contract.test.ts'), join(directory, 'tests/heading-contract.test.ts'));
+await copyFile(resolve(root, 'tests/contracts/headings.json'), join(directory, 'tests/contracts/headings.json'));
+const output = join(directory, 'report.json');
+const result = spawnSync(process.execPath, [resolve(root, 'node_modules/vitest/vitest.mjs'), 'run', '--root', directory, '--reporter=json', '--outputFile', output], { cwd: root, encoding: 'utf8' });
+await writeFile(join(directory, 'test.log'), `${result.stdout}\n${result.stderr}`);
+if (result.error) throw result.error;
+const report = JSON.parse(await readFile(output, 'utf8'));
+if (result.status !== 1 || report.numFailedTests !== 1 || !JSON.stringify(report.testResults).includes('150%')) throw new Error(`Regression did not fail the heading contract: inspect ${directory}`);
+console.log(`PASS: flattening H1/H2 to 100% failed the unchanged heading contract. Production source and accepted contract were untouched. Evidence: ${directory}`);

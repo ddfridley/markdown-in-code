@@ -22,7 +22,9 @@
     "test": "vitest run",
     "test:integration": "npm run build && esbuild tests/integration/index.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/integration/index.cjs && node scripts/run-integration.mjs",
     "test:visual:docker": "node scripts/run-visual-docker.mjs",
-    "visual:update:docker": "node scripts/run-visual-docker.mjs --update",
+    "visual:capture:docker": "node scripts/run-visual-docker.mjs",
+    "visual:accept": "node scripts/accept-visual.mjs",
+    "test:contract:selftest": "node scripts/check-heading-contract.mjs",
     "test:visual:selftest:docker": "node scripts/check-visual-mutations.mjs",
     "validate": "npm run check && npm test && npm run build",
     "vscode:prepublish": "npm run build"

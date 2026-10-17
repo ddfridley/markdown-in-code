@@ -5,3 +5,4 @@ dist
 coverage
 *.vsix
 tests/visual/baselines
+tests/visual/preliminary

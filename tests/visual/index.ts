@@ -100,6 +100,27 @@ export async function run() {
   await capture('standalone-light');
   await open('horizontal-rules.ts');
   await capture('horizontal-rules-light');
+  const headings = await open('headings.ts');
+  await capture('headings-light');
+  await capture('headings-narrow-light', 850);
+  const tight = applied(headings, state => state.headingSizes[0] === 24 && state.headingSizes[1] === 20);
+  await vscode.workspace.getConfiguration('editor').update('lineHeight', 16, vscode.ConfigurationTarget.Global);
+  await tight;
+  await capture('headings-tight-light');
+  const normal = applied(headings, state => state.headingSizes[0] > 16);
+  await vscode.workspace.getConfiguration('editor').update('lineHeight', 24, vscode.ConfigurationTarget.Global);
+  await normal;
+  const wrapped = await open('headings-wrap.ts');
+  const wrapSequence = api.snapshot(wrapped)!.sequence;
+  const wrapReady = applied(wrapped, state => state.sequence > wrapSequence && state.headingSizes[0] === 24 && state.headingSizes[1] === 20);
+  await vscode.workspace.getConfiguration('editor').update('wordWrap', 'on', vscode.ConfigurationTarget.Global);
+  await wrapReady;
+  await vscode.commands.executeCommand('workbench.view.explorer');
+  await vscode.workspace.getConfiguration('editor').update('minimap.enabled', true, vscode.ConfigurationTarget.Global);
+  await capture('headings-wrapped-light', 850);
+  await vscode.workspace.getConfiguration('editor').update('minimap.enabled', false, vscode.ConfigurationTarget.Global);
+  await vscode.commands.executeCommand('workbench.action.closeSidebar');
+  await vscode.workspace.getConfiguration('editor').update('wordWrap', 'off', vscode.ConfigurationTarget.Global);
   await open('fenced.ts');
   await capture('fenced-light');
   await vscode.commands.executeCommand('workbench.view.explorer');
@@ -118,5 +139,7 @@ export async function run() {
     });
   }
   await capture('fenced-dark');
-  console.log('Visual fixtures: 10 captured');
+  await open('headings.ts');
+  await capture('headings-dark');
+  console.log('Visual fixtures: 15 captured');
 }

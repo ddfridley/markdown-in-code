@@ -6,8 +6,9 @@ export interface AppliedState {
   version: number;
   languageId: string;
   codeAppearance: 'light' | 'dark';
+  headingSizes: number[];
   selections: { start: number; end: number }[];
-  ranges: { style: Style; start: number; end: number }[];
+  ranges: { style: Style; start: number; end: number; level?: number }[];
   boxes: { anchor: number; text: string; marginColumns: number; ruleAnchor?: number; hidden: { start: number; end: number }[] }[];
 }
 

@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "metadataSha256": "fbdb781d3f2fc8b6d1dd74dd66dd35816e7d3caa178854053119390ef5f6146f",
+  "images": {
+    "block-dark": "0f7cd5ae8a0be4f18ac31191dc513ab2517e1134dbe5ef1092cfe6d1bd34a0ab",
+    "block-light": "bc65ea31ecfda7877767a8beb5a755fec30fbac2eafb3e75fa2974ae7db53fe3",
+    "block-narrow-light": "bfad1daa821560f9f96e47bcd3f164ebe0f596541f27aaf39d21845a51415504",
+    "block-selected-light": "33274d06278d42bac46a9c9a4a08335a554e5d8b93e706e049dda281548a0cf8",
+    "fenced-dark": "302b0779910708662f2179a46ded82b220c2d5e1f51e5c895e9c4889447aaf72",
+    "fenced-light": "f76c3823322a084d431d1a42a47f636c548dfadea3e77e721f31ea948722e033",
+    "fenced-minimap-light": "b394e949cc86c694947b579a5f415ffdc1d619f70aaf9802b1fc3735aa40eef6",
+    "fenced-sidebar-light": "d43fb2984beb2c619c43c0520eb2fb4aff285859969d50a1d86cca95e8f932e8",
+    "horizontal-rules-light": "75ca2984f3cc7457d7c2c326ad792663c242ef9b69130732c7d2566e71e13418",
+    "standalone-light": "60920b48d37519e4d86621d7443345a239f2c77b5dda2a600f2a9de3e0460ca6",
+    "headings-light": "cd01cf5227f5a0a2037179e0f614e2d3c63d382486e7433c2df13427e0416ad3",
+    "headings-narrow-light": "8059bf9e78fbe9588232ee700cc55a4f33dce8e10e057914a08e4ade88483ef7",
+    "headings-tight-light": "93a5e3324375d25da82f116cd9bbd81e48f914a767b20d996d33ad56e1df2cda",
+    "headings-wrapped-light": "bc8d6f5f69e320d3e59112e2843d6fff699327d1e3f48d8460722387c75bf065",
+    "headings-dark": "5e810d102627e0a31b8cdbd9bb704c73270c3503b500f806d2852506a906c449"
+  },
+  "approvals": [
+    {
+      "sourceCommit": "08c5b70a5eefad6122662aab32c1979e8934b468",
+      "reviewedBy": "user",
+      "reviewedOn": "2026-10-17",
+      "cases": [
+        "block-dark",
+        "block-light",
+        "block-narrow-light",
+        "block-selected-light",
+        "fenced-dark",
+        "fenced-light",
+        "fenced-minimap-light",
+        "fenced-sidebar-light",
+        "horizontal-rules-light",
+        "standalone-light"
+      ],
+      "note": "Migration of the committed, user-reviewed fenced-code and horizontal-rule baseline. No heading previews accepted.",
+      "images": {
+        "block-dark": "66c7cc2fa1ec70362ea14bfcd0c286ce75734e4605aa718b5a56aeab201476bd",
+        "block-light": "4b37aef0b3760635727530ae85c0dc604b8735478f9e37619cad699bf0f4e8eb",
+        "block-narrow-light": "acc5f84d37a261c08fe5a8c6342a1da7b6400cf78092b730eb410642e36dd72b",
+        "block-selected-light": "33274d06278d42bac46a9c9a4a08335a554e5d8b93e706e049dda281548a0cf8",
+        "fenced-dark": "f819431bbe5390dc70dd5968076914eb9d3c18624940ce68f486837b33159e7c",
+        "fenced-light": "36016857a3ffcb46fa1c1424672c1b8119a0f10fdb4ce5dd41ce0aef8919828a",
+        "fenced-minimap-light": "02b269e2c908f228c1567513b63494f8696320271328506329d6c0eaee6ed666",
+        "fenced-sidebar-light": "c94c00a4f455555bca396630870cb84e6fb88aa4fd4b0c13c103bb756904491e",
+        "horizontal-rules-light": "9106dca363b1ff9e73ca7be1955bf0fc140421cf427478cef3fca49ceb4d9b8a",
+        "standalone-light": "26b35c4520c9c81c10c2bfac4c8547ba5b40f79b840159b5ace91f2b8d4ddf5c"
+      },
+      "metadataSha256": "fbdb781d3f2fc8b6d1dd74dd66dd35816e7d3caa178854053119390ef5f6146f"
+    },
+    {
+      "runId": "1792271623561",
+      "reviewedBy": "User approval in chat",
+      "acceptedAt": "2026-10-17T21:22:46.167Z",
+      "metadataSha256": "fbdb781d3f2fc8b6d1dd74dd66dd35816e7d3caa178854053119390ef5f6146f",
+      "images": {
+        "block-light": "bc65ea31ecfda7877767a8beb5a755fec30fbac2eafb3e75fa2974ae7db53fe3",
+        "block-selected-light": "33274d06278d42bac46a9c9a4a08335a554e5d8b93e706e049dda281548a0cf8",
+        "block-narrow-light": "bfad1daa821560f9f96e47bcd3f164ebe0f596541f27aaf39d21845a51415504",
+        "block-dark": "0f7cd5ae8a0be4f18ac31191dc513ab2517e1134dbe5ef1092cfe6d1bd34a0ab",
+        "standalone-light": "60920b48d37519e4d86621d7443345a239f2c77b5dda2a600f2a9de3e0460ca6",
+        "horizontal-rules-light": "75ca2984f3cc7457d7c2c326ad792663c242ef9b69130732c7d2566e71e13418",
+        "fenced-light": "f76c3823322a084d431d1a42a47f636c548dfadea3e77e721f31ea948722e033",
+        "fenced-sidebar-light": "d43fb2984beb2c619c43c0520eb2fb4aff285859969d50a1d86cca95e8f932e8",
+        "fenced-minimap-light": "b394e949cc86c694947b579a5f415ffdc1d619f70aaf9802b1fc3735aa40eef6",
+        "fenced-dark": "302b0779910708662f2179a46ded82b220c2d5e1f51e5c895e9c4889447aaf72",
+        "headings-light": "cd01cf5227f5a0a2037179e0f614e2d3c63d382486e7433c2df13427e0416ad3",
+        "headings-narrow-light": "8059bf9e78fbe9588232ee700cc55a4f33dce8e10e057914a08e4ade88483ef7",
+        "headings-tight-light": "93a5e3324375d25da82f116cd9bbd81e48f914a767b20d996d33ad56e1df2cda",
+        "headings-wrapped-light": "bc8d6f5f69e320d3e59112e2843d6fff699327d1e3f48d8460722387c75bf065",
+        "headings-dark": "5e810d102627e0a31b8cdbd9bb704c73270c3503b500f806d2852506a906c449"
+      },
+      "cases": [
+        "block-light",
+        "block-selected-light",
+        "block-narrow-light",
+        "block-dark",
+        "standalone-light",
+        "horizontal-rules-light",
+        "fenced-light",
+        "fenced-sidebar-light",
+        "fenced-minimap-light",
+        "fenced-dark",
+        "headings-light",
+        "headings-narrow-light",
+        "headings-tight-light",
+        "headings-wrapped-light",
+        "headings-dark"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Comment rendering behavior
 
-This is the Phase 2 contract for the initial extension. Pure parser and rendering-session tests enforce the rules, Phase 3 checks real VS Code event wiring and decoration updates, and Phase 4 now compares ten pinned Linux editor captures. See `docs/visual-testing.md` for coverage, limitations and the baseline review gallery.
+This is the Phase 2 contract for the initial extension. Pure parser and rendering-session tests enforce the rules, Phase 3 checks real VS Code event wiring and decoration updates, and Phase 4 now compares fifteen pinned Linux editor captures. See `docs/visual-testing.md` for coverage, limitations and the baseline review gallery.
 
 ## Scope and syntax
 
@@ -11,10 +11,11 @@ This is the Phase 2 contract for the initial extension. Pure parser and renderin
 | Consecutive standalone `//` comments | Two or more adjacent rows with only whitespace to the left form one framed Markdown block, including headings and multiline formatting. Blank source lines, code and trailing comments break the group. An empty `//` row remains part of the group. |
 | Lone standalone and trailing `//` comments | Parse independently, with bold, italic, strike and inline-code decorations. No heading styling or frame. |
 | Same-line `/* … */` comments | Keep delimiters visible and apply inline formatting such as bold/italic. No frame or heading styling, whether standalone or following code. |
+| Ordinary framed-comment text | Dark gray in light themes and light gray in dark themes while rendered. Inline formatting retains its weight/style; heading and fenced-code foregrounds remain distinct. Source reveal restores native syntax coloring. |
 | Bold, italic, strikethrough | Hide recognized delimiters and style content; support nesting and GFM single/double tildes. Escaped markers stay literal. |
 | Inline code | Hide matching backtick runs and apply a background; apparent Markdown inside stays literal. Preserve source spacing rather than reproducing HTML whitespace normalization. |
-| Block-comment ATX headings | Hide opening hashes and optional closing hashes, and style the title bold with a theme color. Keep the editor's font size. |
-| Setext headings | Recognize and color the range; underline markers remain raw. Complete heading presentation is deferred. |
+| Block-comment ATX headings | Levels 1–6 hide hashes and use descending md-comments size proportions and font weights, underlines and neutral theme colors. Font sizes use relative percentages without a row-height cap; all wrap modes retain the full hierarchy. Enlarged headings can overflow/clip when wrapped; see the heading limitations. H4–H6 remain smaller than base. See [heading behavior](headings.md). |
+| Setext headings | Levels 1–2 share ATX typography; underline markers hide, leaving their source row blank. Multiline title rows stay separate. |
 | Lists | Keep structural markers raw. Recognized inline formatting inside list items can render. Bullet replacement and numbering remain later slices. |
 | Horizontal rules | Render parser-recognized thematic breaks as theme-colored lines to the editor edge inside framed comments. Editing reveals source. Code, HTML, escaped markers and Setext headings retain their existing behavior. See [manual checks](horizontal-rules.md). |
 | HTML comments inside Markdown | Preserve their syntax and content without interpreting contained Markdown. An HTML block also suppresses Markdown according to remark's block rules. |
@@ -52,7 +53,7 @@ For these manual checks, open `tests/fixtures/behavior.ts` in the **Extension De
 5. **Split editors:** with this file active, press Ctrl+\\ to open it in two side-by-side editors. In the left editor click line 4 before `Heading`. In the right editor click line 1 before `const`. The left editor should show the first block comment's Markdown markers; the right should render that same comment. Each editor retains its own cursor position even when the other editor has focus.
 6. **Plain Text:** return to one editor and click line 1 before `const`. Press Ctrl+K, release, then press M. Choose **Plain Text**. All Markdown markers should be visible and extension formatting should disappear in both splits if still open. Repeat and choose **TypeScript** to restore the file's language mode and rendering.
 
-These interaction boundary cases now have unit and real extension-host coverage; see `tests/integration/index.ts` and `docs/testing.md`. Marker alignment, selection paint, clipping and colors still require visual checks. No pixel baselines are approved by these tests.
+These interaction boundary cases now have unit and real extension-host coverage; see `tests/integration/index.ts` and `docs/testing.md`. Marker alignment, selection paint, clipping and colors still require visual checks. Automated tests do not approve pixel baselines; new typography candidates require manual review.
 
 The user has confirmed that all six manual checks above pass. Phase 3's automated checks also pass locally on Windows with VS Code 1.100.3.
 

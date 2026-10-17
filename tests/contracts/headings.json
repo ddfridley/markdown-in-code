@@ -1,0 +1,5 @@
+{
+  "relativeSizes": ["150%", "125%", "100%", "95%", "90%", "85%"],
+  "fontWeights": ["800", "700", "600", "600", "500", "400"],
+  "policy": "Full hierarchy remains active regardless of line height and word wrap. Changes require explicit human agreement."
+}

@@ -12,7 +12,7 @@ Fenced code uses an opposite light/dark background and simplified JavaScript/Typ
 
 For a Phase 1 manual check, open `tests/fixtures/comments.ts` in the development host:
 
-- With the caret outside comments, bold and italic text should be styled and their Markdown markers hidden. The block-comment heading should be bold and theme-colored, with its opening `#` hidden. Heading text stays at the editor's font size; the supported text-decoration API has no font-size property.
+- With the caret outside comments, bold and italic text should be styled and their Markdown markers hidden. The block-comment heading should be bold and theme-colored, with its opening `#` hidden. Heading sizes and weights decrease by level using the md-comments proportions; CSS percentages scale with the editor font, and word wrap preserves the same sizes (with documented overflow limits). See [heading behavior](docs/headings.md) for the CSS approach and layout limits.
 - Click inside a comment: its complete Markdown source should reappear for editing. Move the caret back into code: formatting should return.
 - Toggle rendering: comments should switch between source and formatting. Surrounding code and strings must remain visually unaffected, and rendering must never change the file contents.
 
@@ -52,8 +52,10 @@ Selective adaptation is the chosen reuse strategy: keep extraction, mapping, par
 
 Unit tests cover comment extraction and computed ranges. `npm run test:integration` runs real VS Code extension-host behavior checks. The separate pinned Linux screenshot harness checks painted editor output. See [testing instructions](docs/testing.md) for the test applications, isolated sessions and CI configuration.
 
-The screenshot harness is now available: `npm run test:visual:docker` compares ten editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Expected-image updates are explicit and require review; missing baselines fail.
+The screenshot harness is now available: `npm run test:visual:docker` compares fifteen editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Tests write separate preliminary images and leave accepted images read-only. Changed/missing images fail until interactive human acceptance; automatic updates are disabled.
 
 Phase 2's [behavior contract](docs/behavior.md) specifies comment types, selection boundaries, multiple carets, split editors, toggling, cache updates, and the raw presentation of deferred Markdown features. Use `tests/fixtures/behavior.ts` for its manual checks.
 
-See [horizontal-rule behavior and manual checks](docs/horizontal-rules.md) for the reviewed slice. The [feature-slice plan](PLAN.md#5-expand-in-small-feature-slices) puts heading typography and layout next, before adding more block features.
+See [horizontal-rule behavior and manual checks](docs/horizontal-rules.md) for the reviewed slice. The [feature-slice plan](PLAN.md#5-expand-in-small-feature-slices) tracks the heading implementation and the remaining feature slices.
+
+Heading levels, Setext marker hiding and relative typography are implemented and approved. See [heading behavior and exact manual checks](docs/headings.md).

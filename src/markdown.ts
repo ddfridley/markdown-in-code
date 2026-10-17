@@ -4,8 +4,8 @@ import remarkGfm from 'remark-gfm';
 import { extractComments, mapRange, type Span, type CommentRegion } from './comments';
 import { fencedCode, type CodeStyle } from './fenced-code';
 
-export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | CodeStyle;
-export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string }
+export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | CodeStyle;
+export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string; level?: number }
 const processor = unified().use(remarkParse).use(remarkGfm);
 
 /** Small AST-to-range adapter inspired by MIEV; offsets remain UTF-16 throughout. */
@@ -13,8 +13,8 @@ export function parseComments(source: string, fileName?: string, regions = extra
   const decorations: Decoration[] = [];
   for (const region of regions) {
     const tree = processor.parse(region.markdown);
-    function add(style: Style, start: number, end: number) {
-      for (const span of mapRange(region, { start, end })) decorations.push({ ...span, style, region });
+    function add(style: Style, start: number, end: number, level?: number) {
+      for (const span of mapRange(region, { start, end })) decorations.push({ ...span, style, region, ...(level === undefined ? {} : { level }) });
     }
     function walk(node: typeof tree | typeof tree.children[number] | { type: string; position?: { start: { offset?: number }; end: { offset?: number } }; children?: unknown[] }) {
       const start = node.position?.start.offset;
@@ -38,16 +38,20 @@ export function parseComments(source: string, fileName?: string, regions = extra
           add('marker', end - width, end);
         } else if (node.type === 'heading' && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
           const text = region.markdown.slice(start, end);
-          const opening = /^#{1,6}(?:[\t ]+|$)/.exec(text);
+          const level = 'depth' in node && typeof node.depth === 'number' ? node.depth : 1;
+          const opening = /^ {0,3}#{1,6}(?:[\t ]+|$)/.exec(text);
           if (opening) {
             const contentStart = start + opening[0].length;
             const closing = /[\t ]+#+[\t ]*$/.exec(text.slice(opening[0].length));
             const contentEnd = closing ? contentStart + closing.index : end;
             add('marker', start, contentStart);
-            add('heading', contentStart, contentEnd);
+            add('heading', contentStart, contentEnd, level);
             if (closing) add('marker', contentEnd, end);
           } else {
-            add('heading', start, end);
+            const underline = text.lastIndexOf('\n');
+            const titleEnd = start + text.slice(0, underline).trimEnd().length;
+            add('heading', start, titleEnd, level);
+            add('marker', start + underline + 1, end);
           }
         }
       }

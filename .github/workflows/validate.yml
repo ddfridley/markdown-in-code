@@ -15,6 +15,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run validate
+      - name: Prove heading contract rejects flattened sizes
+        run: npm run test:contract:selftest
       - name: VS Code integration (Linux)
         if: runner.os == 'Linux'
         run: xvfb-run -a npm run test:integration
@@ -45,6 +47,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: visual-artifacts-linux
-          path: .vscode-test/visual-artifacts/
+          path: |
+            .vscode-test/visual-artifacts/
+            tests/visual/preliminary/
           if-no-files-found: warn
           retention-days: 14
