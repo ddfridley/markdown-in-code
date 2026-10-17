@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [{
+    "label": "Build Markdown in Code (NVS)",
+    "type": "process",
+    "command": "bash",
+    "args": ["--noprofile", "--norc", "-c", "source ./.bashrc && npm run build"],
+    "windows": { "command": "${env:ProgramFiles}\\Git\\bin\\bash.exe" },
+    "options": { "cwd": "${workspaceFolder}" },
+    "problemMatcher": [],
+    "group": { "kind": "build", "isDefault": true }
+  }, {
+    "label": "Start Markdown in Code debug host",
+    "type": "process",
+    "command": "powershell.exe",
+    "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/start-debug-host.ps1", "-CodePath", "${execPath}", "-ProjectPath", "${workspaceFolder}"],
+    "dependsOn": "Build Markdown in Code (NVS)",
+    "problemMatcher": []
+  }, {
+    "label": "Preview Markdown in Code",
+    "type": "process",
+    "command": "${execPath}",
+    "args": ["--new-window", "--extensionDevelopmentPath=${workspaceFolder}", "${workspaceFolder}/tests/fixtures/comments.ts"],
+    "dependsOn": "Build Markdown in Code (NVS)",
+    "problemMatcher": []
+  }]
+}

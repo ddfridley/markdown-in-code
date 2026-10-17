@@ -1,0 +1,11 @@
+{
+  "version": "0.2.0",
+  "configurations": [{
+    "name": "Run Markdown in Code", "type": "node", "request": "attach",
+    "address": "127.0.0.1",
+    "port": 9333,
+    "trace": true,
+    "outFiles": ["${workspaceFolder}/dist/**/*.cjs"],
+    "preLaunchTask": "Start Markdown in Code debug host"
+  }]
+}
