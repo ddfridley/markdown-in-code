@@ -21,6 +21,9 @@
     "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/extension.cjs --sourcemap",
     "test": "vitest run",
     "test:integration": "npm run build && esbuild tests/integration/index.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/integration/index.cjs && node scripts/run-integration.mjs",
+    "test:visual:docker": "node scripts/run-visual-docker.mjs",
+    "visual:update:docker": "node scripts/run-visual-docker.mjs --update",
+    "test:visual:selftest:docker": "node scripts/check-visual-mutations.mjs",
     "validate": "npm run check && npm test && npm run build",
     "vscode:prepublish": "npm run build"
   },
@@ -31,6 +34,8 @@
     "remark-gfm": "4.0.1"
   },
   "devDependencies": {
+    "pixelmatch": "7.1.0",
+    "pngjs": "7.0.0",
     "@vscode/test-electron": "2.5.2",
     "@types/node": "^22.0.0",
     "@types/vscode": "1.100.0",

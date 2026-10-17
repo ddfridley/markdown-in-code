@@ -1,0 +1,7 @@
+node_modules
+dist
+.vscode-test
+.git
+coverage
+*.vsix
+tests/visual/baselines

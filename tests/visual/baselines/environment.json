@@ -1,0 +1,12 @@
+{
+  "environment": "debian-bookworm-20250615-node22.16-vscode1.100.3-x64",
+  "vscode": "1.100.3",
+  "node": "v22.16.0",
+  "font": "DejaVu Sans Mono",
+  "fontSize": 16,
+  "lineHeight": 24,
+  "scale": 1,
+  "capture": "editor-excluding-scrollbar-and-overview-ruler",
+  "pixelThreshold": 0.1,
+  "allowedDifferingPixels": 0
+}

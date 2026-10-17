@@ -4,13 +4,17 @@ Phase 1 prototype of a VS Code extension for Markdown in JavaScript/TypeScript c
 
 The prototype styles bold, italic, strikethrough, inline code, and block-comment headings. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions are provisional; extension-host and visual validation are later phases.
 
+Block comments now display an open-right `┌─ / │ / └─` frame, with one column between the vertical stroke and Markdown content. Source comment delimiters/prefixes reappear during editing. See [frame behavior and manual checks](docs/comment-boxes.md), including mixed prefixes and compact inline blocks. Real extension-host checks cover these transitions; screenshot baseline comparisons are still pending.
+
+Horizontal borders reach the editor viewport's right edge. Two or more consecutive `//` comments with only whitespace to their left also form a framed Markdown block; trailing comments and isolated `//` lines remain inline.
+
 For a Phase 1 manual check, open `tests/fixtures/comments.ts` in the development host:
 
 - With the caret outside comments, bold and italic text should be styled and their Markdown markers hidden. The block-comment heading should be bold and theme-colored, with its opening `#` hidden. Heading text stays at the editor's font size; the supported text-decoration API has no font-size property.
 - Click inside a comment: its complete Markdown source should reappear for editing. Move the caret back into code: formatting should return.
 - Toggle rendering: comments should switch between source and formatting. Surrounding code and strings must remain visually unaffected, and rendering must never change the file contents.
 
-The leading comment `*` prefixes are stripped from parser input, so ` * # Comment heading` is recognized as a heading. The comment prefixes themselves remain visible. Phase 1 proves extraction and mapping; it does not yet promise full Markdown rendering or verified visual layout.
+The leading comment `*` prefixes are stripped from parser input, so ` * # Comment heading` is recognized as a heading. The frame now replaces those prefixes in rendered block comments. Full Markdown rendering and automated visual layout verification remain later work.
 
 With Node.js 22 or newer installed:
 
@@ -44,6 +48,8 @@ Selective adaptation is the chosen reuse strategy: keep extraction, mapping, par
 
 [Markdown Inline Editor](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode) by SeardnaSchmid is the architectural reference for the remark AST-to-decoration approach. Its implementation is MIT licensed. No upstream source code is vendored in this phase; any future copied code must retain its applicable copyright and MIT license notices. The earlier `md-comments` project informs the intended behavior.
 
-Unit tests cover comment extraction and computed ranges. `npm run test:integration` runs real VS Code extension-host behavior checks. Neither layer establishes VS Code paint quality; pinned Linux screenshot comparisons remain a later milestone. No screenshot baselines are generated here. See [testing instructions](docs/testing.md) for the pinned test application, isolated test sessions and CI configuration.
+Unit tests cover comment extraction and computed ranges. `npm run test:integration` runs real VS Code extension-host behavior checks. The separate pinned Linux screenshot harness checks painted editor output. See [testing instructions](docs/testing.md) for the test applications, isolated sessions and CI configuration.
+
+The screenshot harness is now available: `npm run test:visual:docker` compares six editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Expected-image updates are explicit and require review; missing baselines fail.
 
 Phase 2's [behavior contract](docs/behavior.md) specifies comment types, selection boundaries, multiple carets, split editors, toggling, cache updates, and the raw presentation of deferred Markdown features. Use `tests/fixtures/behavior.ts` for its manual checks.

@@ -23,7 +23,7 @@ const codeBefore = "**this string stays raw**";
 
 // Standalone **bold**
 const codeAfter = 2; // Trailing *italic*
-// **Not joined
+// **Joined
 // across comments**
 
 export { codeBefore, codeAfter };

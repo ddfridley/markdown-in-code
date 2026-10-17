@@ -29,3 +29,22 @@ jobs:
           path: .vscode-test/sessions/**/user-data/logs/**
           if-no-files-found: ignore
           retention-days: 7
+  visual:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Compare pinned Linux screenshots
+        run: node scripts/run-visual-docker.mjs
+      - name: Verify missing-border and offset failures
+        run: node scripts/check-visual-mutations.mjs
+      - name: Retain actual, expected, diffs, reports and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-artifacts-linux
+          path: .vscode-test/visual-artifacts/
+          if-no-files-found: warn
+          retention-days: 14

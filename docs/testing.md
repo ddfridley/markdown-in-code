@@ -9,7 +9,7 @@ npm run validate
 npm run test:integration
 ```
 
-`validate` runs strict TypeScript checking, 25 unit tests and the extension build. `test:integration` builds both the extension and the integration runner, then runs 10 sequential checks inside an isolated VS Code extension host. The first integration run downloads VS Code **1.100.3**, matching the extension's minimum supported VS Code series. It does not use F5, the attach workaround, or port 9333. A temporary test window opens and closes automatically; leave it alone while checks run.
+`validate` runs strict TypeScript checking, 41 unit tests and the extension build, including the visual comparison gate's unit tests. `test:integration` builds both the extension and the integration runner, then runs 13 sequential checks inside an isolated VS Code extension host. The first integration run downloads VS Code **1.100.3**, matching the extension's minimum supported VS Code series. It does not use F5, the attach workaround, or port 9333. A temporary test window opens and closes automatically; leave it alone while checks run.
 
 Each run creates its own workspace, user-data directory, and extensions directory under `.vscode-test/sessions/<timestamp>`. Installed user extensions are disabled only in that test application. Test edits affect fixture copies, not repository fixtures. The downloaded application and sessions are ignored by Git. VS Code logs remain in that session's `user-data/logs` directory for failed-run diagnosis.
 
@@ -21,4 +21,4 @@ For a second VS Code version, set `VSCODE_EXECUTABLE_PATH` to an installed VS Co
 
 The GitHub Actions workflow runs validation and integration on Windows, macOS and Linux. Linux uses Xvfb for the application display. Failed jobs upload test-session logs. The workflow has been authored but has not been run remotely; the verified local integration result is Windows with VS Code 1.100.3.
 
-These tests establish calls into VS Code and interaction state. They do not inspect pixels, establish font alignment, approve screenshot baselines, or test the deferred comment-box and contrasting fenced-code features. Those require the next planned feature and visual-testing slices.
+These unit/integration tests establish calls into VS Code and interaction state, including box visibility, source-prefix ranges, and tab-size layout updates. The separate [visual regression harness](visual-testing.md) now captures and compares six real editor images in a pinned Linux container. It includes intentional missing-border and offset rejection checks, explicit updates and failure artifacts. The baseline candidates need human review. Contrasting fenced-code rendering remains deferred.

@@ -1,14 +1,16 @@
 # Comment rendering behavior
 
-This is the Phase 2 contract for the initial extension. Pure parser and rendering-session tests enforce the rules, and Phase 3 now checks the real VS Code event wiring and decoration updates. Painted layout checks remain Phase 4 work.
+This is the Phase 2 contract for the initial extension. Pure parser and rendering-session tests enforce the rules, Phase 3 checks real VS Code event wiring and decoration updates, and Phase 4 now compares six pinned Linux editor captures. See `docs/visual-testing.md` for coverage, limitations and the baseline review gallery.
 
 ## Scope and syntax
 
 | Input | Current behavior |
 | --- | --- |
 | JavaScript, TypeScript, JSX, TSX | Render compiler-recognized comments only. Strings, regex literals, template text and JSX text remain code. Comments inside template expressions can render. |
-| Block comments | Parse each comment as its own Markdown document. Remove delimiters, the JSDoc opening star and conventional single `*` prefixes from parser input. Keep comment syntax visible in the editor. Preserve indentation after prefixes for Markdown code blocks. |
-| Standalone and trailing `//` comments | Parse independently, with bold, italic, strike and inline-code decorations. No heading styling or joining adjacent comments. |
+| Block comments | Parse each comment as its own Markdown document. In rendered mode hide delimiters and structural prefixes behind an open-right box frame with a one-space inset. Normalize JSDoc/conventional star prefixes, interior `//` prefixes and common block indentation without stripping fenced/indented code content. See `docs/comment-boxes.md` for ambiguous star-list handling, compact blocks and layout limits. Reveal original source when editing. |
+| Consecutive standalone `//` comments | Two or more adjacent rows with only whitespace to the left form one framed Markdown block, including headings and multiline formatting. Blank source lines, code and trailing comments break the group. An empty `//` row remains part of the group. |
+| Lone standalone and trailing `//` comments | Parse independently, with bold, italic, strike and inline-code decorations. No heading styling or frame. |
+| Same-line `/* … */` comments | Keep delimiters visible and apply inline formatting such as bold/italic. No frame or heading styling, whether standalone or following code. |
 | Bold, italic, strikethrough | Hide recognized delimiters and style content; support nesting and GFM single/double tildes. Escaped markers stay literal. |
 | Inline code | Hide matching backtick runs and apply a background; apparent Markdown inside stays literal. Preserve source spacing rather than reproducing HTML whitespace normalization. |
 | Block-comment ATX headings | Hide opening hashes and optional closing hashes, and style the title bold with a theme color. Keep the editor's font size. |
@@ -33,7 +35,7 @@ Split editors share parsed results but compute visibility from their own selecti
 
 Text edits invalidate parsing by document version. Selection changes reuse parsed ranges. Edits while disabled are parsed when rendering is re-enabled. Closing a document releases its cache; reopening cannot reuse stale ranges. Unsupported language modes clear this extension's decorations and cached results.
 
-All Markdown positions and source offsets use UTF-16. LF and CRLF map to equivalent content. Every mapped decoration lies within a comment content segment; multiline ranges split at prefixes and newlines. Code surrounding comments, comment delimiters, and removed prefixes cannot receive Markdown decorations.
+All Markdown positions and source offsets use UTF-16. LF and CRLF map to equivalent content. Every mapped Markdown decoration lies within a comment content segment; multiline ranges split at prefixes and newlines. Frame decorations separately hide structural syntax and attach border glyphs inside the comment's source region. Source code outside comments never receives these decorations.
 
 ## Regression coverage and remaining checks
 

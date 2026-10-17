@@ -8,9 +8,9 @@ export interface Decoration extends Span { style: Style; region: CommentRegion }
 const processor = unified().use(remarkParse).use(remarkGfm);
 
 /** Small AST-to-range adapter inspired by MIEV; offsets remain UTF-16 throughout. */
-export function parseComments(source: string, fileName?: string): Decoration[] {
+export function parseComments(source: string, fileName?: string, regions = extractComments(source, fileName)): Decoration[] {
   const decorations: Decoration[] = [];
-  for (const region of extractComments(source, fileName)) {
+  for (const region of regions) {
     const tree = processor.parse(region.markdown);
     function add(style: Style, start: number, end: number) {
       for (const span of mapRange(region, { start, end })) decorations.push({ ...span, style, region });
@@ -30,7 +30,7 @@ export function parseComments(source: string, fileName?: string): Decoration[] {
           add('inlineCode', start + width, end - width);
           add('marker', start, start + width);
           add('marker', end - width, end);
-        } else if (node.type === 'heading' && region.kind === 'block') {
+        } else if (node.type === 'heading' && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
           const text = region.markdown.slice(start, end);
           const opening = /^#{1,6}(?:[\t ]+|$)/.exec(text);
           if (opening) {

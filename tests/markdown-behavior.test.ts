@@ -18,10 +18,10 @@ describe('comment Markdown policy', () => {
     expect(slices('/**\n * # Heading\n */', 'heading')).toEqual(['Heading']);
   });
 
-  it('keeps adjacent line comments independent and limits them to inline styling', () => {
+  it('joins adjacent standalone comments into Markdown blocks but leaves lone/trailing comments inline', () => {
     const source = '// **not\n// joined**\n// # Heading\nconst x = 1; // **inline**';
-    expect(slices(source, 'strong')).toEqual(['inline']);
-    expect(slices(source, 'heading')).toEqual([]);
+    expect(slices(source, 'strong')).toEqual(['not', 'joined', 'inline']);
+    expect(slices(source, 'heading')).toEqual(['Heading']);
     expect(slices('// # Heading', 'marker')).toEqual([]);
   });
 

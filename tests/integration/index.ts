@@ -72,6 +72,11 @@ export async function run(): Promise<void> {
       assert.deepEqual(texts(editor, state, 'strong'), ['bold', 'trailing']);
       assert.deepEqual(texts(editor, state, 'heading'), ['Heading']);
       assert.deepEqual(texts(editor, state, 'emphasis'), ['italic', 'standalone']);
+      assert.equal(state.boxes[0].text, '┌');
+      assert.equal(state.boxes.at(-1)!.text, '└');
+      assert.ok(state.boxes[0].ruleAnchor !== undefined);
+      assert.ok(state.boxes.at(-1)!.ruleAnchor !== undefined);
+      assert.equal(state.boxes.filter(box => box.text === '│ ').length, 2);
       for (const range of state.ranges) assert.ok(range.start >= initial.indexOf('/**'));
       assert.equal(document.isDirty, false);
       assert.equal(document.getText(), initial);
@@ -81,9 +86,11 @@ export async function run(): Promise<void> {
     await test('cursor reveals a complete block and leaving restores formatting', async () => {
       const state = await select(editor, [[initial.indexOf('Heading'), initial.indexOf('Heading')]]);
       assert.deepEqual(texts(editor, state, 'heading'), []);
+      assert.deepEqual(state.boxes, []);
       assert.deepEqual(texts(editor, state, 'strong'), ['trailing']);
       const restored = await select(editor, [[0, 0]]);
       assert.deepEqual(texts(editor, restored, 'strong'), ['bold', 'trailing']);
+      assert.ok(restored.boxes.length > 0);
     });
 
     await test('multiline/reversed selection and multiple carets reveal all crossed comments', async () => {
@@ -99,6 +106,7 @@ export async function run(): Promise<void> {
       const disabled = waitFor(editor, state => state.sequence > previous && state.ranges.length === 0);
       await vscode.commands.executeCommand('markdownInCode.toggle');
       await disabled;
+      assert.deepEqual(api.snapshot(editor)!.boxes, []);
       const offset = document.getText().indexOf('bold');
       await editor.edit(builder => builder.replace(new vscode.Range(document.positionAt(offset), document.positionAt(offset + 4)), 'updated'));
       const editedVersion = document.version;
@@ -147,6 +155,7 @@ export async function run(): Promise<void> {
       const right = vscode.window.activeTextEditor!;
       await vscode.languages.setTextDocumentLanguage(document, 'plaintext');
       await waitFor(right, state => state.languageId === 'plaintext' && state.ranges.length === 0);
+      assert.deepEqual(api.snapshot(right)!.boxes, []);
       await vscode.languages.setTextDocumentLanguage(document, 'typescript');
       await waitFor(right, state => state.languageId === 'typescript' && texts(right, state, 'strong').includes('updated'));
     });
@@ -191,6 +200,59 @@ export async function run(): Promise<void> {
       await closed;
       assert.equal(untitled.isClosed, true);
       assert.ok(!vscode.window.visibleTextEditors.includes(temporaryEditor));
+    });
+    await test('plain block boxes normalize mixed prefixes and refresh tab layout', async () => {
+      const source = 'const outside = 1;\n\t/**\n\t * first\n* second\n// third\nfourth\n\t */';
+      const boxPath = join(workspace, 'boxes.ts');
+      await writeFile(boxPath, source);
+      const boxDocument = await vscode.workspace.openTextDocument(boxPath);
+      const boxEditor = await vscode.window.showTextDocument(boxDocument);
+      const state = await waitFor(boxEditor, value => value.boxes.length === 6);
+      assert.deepEqual(state.ranges, []);
+      assert.equal(state.boxes.filter(box => box.text === '│ ').length, 4);
+      const version = boxDocument.version;
+      const sequence = state.sequence;
+      const updated = waitFor(boxEditor, value => value.sequence > sequence && value.boxes.length === 6);
+      boxEditor.options = { tabSize: Number(boxEditor.options.tabSize) === 8 ? 2 : 8 };
+      const changed = await updated;
+      assert.equal(changed.version, version);
+      assert.notEqual(changed.boxes[2].marginColumns, state.boxes[2].marginColumns);
+      const offset = source.indexOf('first');
+      assert.deepEqual((await select(boxEditor, [[offset, offset]])).boxes, []);
+      assert.equal(boxDocument.getText(), source);
+      assert.equal(boxDocument.isDirty, false);
+    });
+    await test('consecutive standalone comments share block formatting and editing state', async () => {
+      const source = 'const before = 1;\n// # Group heading\n// **middle**\n// end\n\nconst after = 2; // **trailing**';
+      const groupPath = join(workspace, 'line-blocks.ts');
+      await writeFile(groupPath, source);
+      const groupDocument = await vscode.workspace.openTextDocument(groupPath);
+      const groupEditor = await vscode.window.showTextDocument(groupDocument);
+      const state = await waitFor(groupEditor, value => value.boxes.length === 3);
+      assert.deepEqual(texts(groupEditor, state, 'heading'), ['Group heading']);
+      assert.deepEqual(texts(groupEditor, state, 'strong'), ['middle', 'trailing']);
+      assert.deepEqual(state.boxes.map(box => box.text), ['┌ ', '│ ', '└ ']);
+      assert.equal(state.boxes.filter(box => box.ruleAnchor !== undefined).length, 2);
+      const offset = source.indexOf('middle');
+      const raw = await select(groupEditor, [[offset, offset]]);
+      assert.deepEqual(raw.boxes, []);
+      assert.deepEqual(texts(groupEditor, raw, 'strong'), ['trailing']);
+      assert.equal((await select(groupEditor, [[0, 0]])).boxes.length, 3);
+      assert.equal(groupDocument.getText(), source);
+      assert.equal(groupDocument.isDirty, false);
+    });
+    await test('same-line block comments keep delimiters and have inline formatting without frames', async () => {
+      const source = 'const x = 1; /* **Inline comment** */\n/* # Not a block heading */';
+      const inlinePath = join(workspace, 'inline.ts');
+      await writeFile(inlinePath, source);
+      const inlineDocument = await vscode.workspace.openTextDocument(inlinePath);
+      const inlineEditor = await vscode.window.showTextDocument(inlineDocument);
+      const state = await waitFor(inlineEditor, value => texts(inlineEditor, value, 'strong').includes('Inline comment'));
+      assert.deepEqual(state.boxes, []);
+      assert.deepEqual(texts(inlineEditor, state, 'heading'), []);
+      assert.deepEqual(texts(inlineEditor, state, 'marker'), ['**', '**']);
+      assert.equal(inlineDocument.getText(), source);
+      assert.equal(inlineDocument.isDirty, false);
     });
     console.log(`Integration checks: ${passed.length} passed (VS Code ${vscode.version})`);
   } finally {

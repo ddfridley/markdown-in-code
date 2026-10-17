@@ -7,6 +7,7 @@ export interface AppliedState {
   languageId: string;
   selections: { start: number; end: number }[];
   ranges: { style: Style; start: number; end: number }[];
+  boxes: { anchor: number; text: string; marginColumns: number; ruleAnchor?: number; hidden: { start: number; end: number }[] }[];
 }
 
 /** Exposed only in ExtensionMode.Test, after all setDecorations calls complete. */
