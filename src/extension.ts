@@ -16,6 +16,10 @@ export function activate(context: vscode.ExtensionContext) {
   let sequence = 0;
   const options: Record<Exclude<Style, CodeStyle | 'heading'>, vscode.DecorationRenderOptions> = {
     commentText: { color: new vscode.ThemeColor('editor.foreground'), light: { color: '#4d4d4d' }, dark: { color: '#a0a0a0' } },
+    listMarker: { color: 'transparent', before: {
+      contentText: '•', color: new vscode.ThemeColor('editor.foreground'),
+      fontStyle: 'normal', fontWeight: 'normal', width: '1ch', margin: '0 -1ch 0 0'
+    }, light: { before: { color: '#4d4d4d' } }, dark: { before: { color: '#a0a0a0' } } },
     strong: { fontWeight: 'bold' }, emphasis: { fontStyle: 'italic' },
     delete: { textDecoration: 'line-through' },
     inlineCode: { backgroundColor: new vscode.ThemeColor('textCodeBlock.background') },

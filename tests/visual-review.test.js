@@ -23,6 +23,18 @@ async function fixture(run) {
 }
 
 describe('human screenshot acceptance', () => {
+  it('shows changed and new cases before unchanged cases without reordering the report', async () => fixture(async ({ preliminary, report }) => {
+    report.reports = [
+      { ...report.reports[0], name: 'unchanged', pass: true },
+      { ...report.reports[0], name: 'changed' },
+      { ...report.reports[0], name: 'new-case', acceptedSha256: null }
+    ];
+    await writeReview(preliminary, report);
+    const html = await readFile(join(preliminary, 'index.html'), 'utf8');
+    expect(html.indexOf('REVIEW REQUIRED: changed')).toBeLessThan(html.indexOf('REVIEW REQUIRED: new-case'));
+    expect(html.indexOf('REVIEW REQUIRED: new-case')).toBeLessThan(html.indexOf('UNCHANGED: unchanged'));
+    expect(report.reports.map(item => item.name)).toEqual(['unchanged', 'changed', 'new-case']);
+  }));
   it('refuses unattended acceptance and the former automatic update command', () => {
     const accept = spawnSync(process.execPath, ['scripts/accept-visual.mjs', '123'], { encoding: 'utf8', env: { ...process.env, CI: 'true' } });
     expect(accept.status).not.toBe(0);

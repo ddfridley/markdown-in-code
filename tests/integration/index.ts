@@ -347,6 +347,28 @@ export async function run(): Promise<void> {
         for (const key of Object.keys(original)) await settings.update(key, original[key], vscode.ConfigurationTarget.Workspace);
       }
     });
+    await test('unordered bullets preserve nesting, editing, source reveal and toggling', async () => {
+      const source = 'const outside=1;\n/**\n * - **Parent**\n *   - Child\n */';
+      const path = join(workspace, 'unordered-lists.ts');
+      await writeFile(path, source);
+      const document = await vscode.workspace.openTextDocument(path);
+      const editor = await vscode.window.showTextDocument(document);
+      const rendered = await waitFor(editor, state => texts(editor, state, 'listMarker').length === 2);
+      assert.deepEqual(texts(editor, rendered, 'listMarker'), ['-', '-']);
+      assert.deepEqual(texts(editor, rendered, 'strong'), ['Parent']);
+      assert.equal(document.getText(), source);
+      assert.equal(document.isDirty, false);
+      const child = source.indexOf('Child');
+      assert.equal((await select(editor, [[child, child]])).ranges.length, 0);
+      await select(editor, [[0, 0]]);
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => state.ranges.length === 0);
+      await editor.edit(edit => edit.replace(new vscode.Range(document.positionAt(child), document.positionAt(child + 5)), 'Updated child'));
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      const restored = await waitFor(editor, state => state.version === document.version && texts(editor, state, 'listMarker').length === 2);
+      assert.ok(texts(editor, restored, 'commentText').join('').includes('Updated child'));
+      assert.equal(document.getText(), source.replace('Child', 'Updated child'));
+    });
     console.log(`Integration checks: ${passed.length} passed (VS Code ${vscode.version})`);
   } finally {
     // Fixtures are in the runner's isolated workspace; leave logs for diagnosis.

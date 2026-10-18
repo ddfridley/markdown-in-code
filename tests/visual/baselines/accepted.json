@@ -2,9 +2,9 @@
   "version": 1,
   "metadataSha256": "fbdb781d3f2fc8b6d1dd74dd66dd35816e7d3caa178854053119390ef5f6146f",
   "images": {
-    "block-dark": "0f7cd5ae8a0be4f18ac31191dc513ab2517e1134dbe5ef1092cfe6d1bd34a0ab",
-    "block-light": "bc65ea31ecfda7877767a8beb5a755fec30fbac2eafb3e75fa2974ae7db53fe3",
-    "block-narrow-light": "bfad1daa821560f9f96e47bcd3f164ebe0f596541f27aaf39d21845a51415504",
+    "block-dark": "e72e529ea730775a5ed450ffc690cfac4a9171f7d1e173d93511ec5dc6d093ff",
+    "block-light": "0579cb8657ba921fe0de4c7d0461de2f93fc17cfcddde0c7c461c43968b00317",
+    "block-narrow-light": "6c96972179499385d01ad1f6cf215edeeaadaa873db3cbd25657d3bcbdbd32eb",
     "block-selected-light": "33274d06278d42bac46a9c9a4a08335a554e5d8b93e706e049dda281548a0cf8",
     "fenced-dark": "302b0779910708662f2179a46ded82b220c2d5e1f51e5c895e9c4889447aaf72",
     "fenced-light": "f76c3823322a084d431d1a42a47f636c548dfadea3e77e721f31ea948722e033",
@@ -16,7 +16,9 @@
     "headings-narrow-light": "8059bf9e78fbe9588232ee700cc55a4f33dce8e10e057914a08e4ade88483ef7",
     "headings-tight-light": "93a5e3324375d25da82f116cd9bbd81e48f914a767b20d996d33ad56e1df2cda",
     "headings-wrapped-light": "bc8d6f5f69e320d3e59112e2843d6fff699327d1e3f48d8460722387c75bf065",
-    "headings-dark": "5e810d102627e0a31b8cdbd9bb704c73270c3503b500f806d2852506a906c449"
+    "headings-dark": "5e810d102627e0a31b8cdbd9bb704c73270c3503b500f806d2852506a906c449",
+    "unordered-lists-light": "59ea1978a67b4c46f538489d051f7e29d99a6387b40d653740801e0f062c653a",
+    "unordered-lists-dark": "ec5f91cfc635876b4fecd6e13284bfd335cd95d93cb158d994baf614d33c1815"
   },
   "approvals": [
     {
@@ -88,6 +90,50 @@
         "headings-tight-light",
         "headings-wrapped-light",
         "headings-dark"
+      ]
+    },
+    {
+      "runId": "1792277196123",
+      "reviewedBy": "User approval in chat",
+      "acceptedAt": "2026-10-18T00:16:11.159Z",
+      "metadataSha256": "fbdb781d3f2fc8b6d1dd74dd66dd35816e7d3caa178854053119390ef5f6146f",
+      "images": {
+        "block-light": "0579cb8657ba921fe0de4c7d0461de2f93fc17cfcddde0c7c461c43968b00317",
+        "block-selected-light": "33274d06278d42bac46a9c9a4a08335a554e5d8b93e706e049dda281548a0cf8",
+        "block-narrow-light": "6c96972179499385d01ad1f6cf215edeeaadaa873db3cbd25657d3bcbdbd32eb",
+        "block-dark": "e72e529ea730775a5ed450ffc690cfac4a9171f7d1e173d93511ec5dc6d093ff",
+        "standalone-light": "60920b48d37519e4d86621d7443345a239f2c77b5dda2a600f2a9de3e0460ca6",
+        "horizontal-rules-light": "75ca2984f3cc7457d7c2c326ad792663c242ef9b69130732c7d2566e71e13418",
+        "fenced-light": "f76c3823322a084d431d1a42a47f636c548dfadea3e77e721f31ea948722e033",
+        "fenced-sidebar-light": "d43fb2984beb2c619c43c0520eb2fb4aff285859969d50a1d86cca95e8f932e8",
+        "fenced-minimap-light": "b394e949cc86c694947b579a5f415ffdc1d619f70aaf9802b1fc3735aa40eef6",
+        "fenced-dark": "302b0779910708662f2179a46ded82b220c2d5e1f51e5c895e9c4889447aaf72",
+        "headings-light": "cd01cf5227f5a0a2037179e0f614e2d3c63d382486e7433c2df13427e0416ad3",
+        "headings-narrow-light": "8059bf9e78fbe9588232ee700cc55a4f33dce8e10e057914a08e4ade88483ef7",
+        "headings-tight-light": "93a5e3324375d25da82f116cd9bbd81e48f914a767b20d996d33ad56e1df2cda",
+        "headings-wrapped-light": "bc8d6f5f69e320d3e59112e2843d6fff699327d1e3f48d8460722387c75bf065",
+        "headings-dark": "5e810d102627e0a31b8cdbd9bb704c73270c3503b500f806d2852506a906c449",
+        "unordered-lists-light": "59ea1978a67b4c46f538489d051f7e29d99a6387b40d653740801e0f062c653a",
+        "unordered-lists-dark": "ec5f91cfc635876b4fecd6e13284bfd335cd95d93cb158d994baf614d33c1815"
+      },
+      "cases": [
+        "block-light",
+        "block-selected-light",
+        "block-narrow-light",
+        "block-dark",
+        "standalone-light",
+        "horizontal-rules-light",
+        "fenced-light",
+        "fenced-sidebar-light",
+        "fenced-minimap-light",
+        "fenced-dark",
+        "headings-light",
+        "headings-narrow-light",
+        "headings-tight-light",
+        "headings-wrapped-light",
+        "headings-dark",
+        "unordered-lists-light",
+        "unordered-lists-dark"
       ]
     }
   ]

@@ -31,11 +31,12 @@ describe('comment Markdown policy', () => {
     expect(slices('/* before <!-- *hidden* --> **visible** */', 'emphasis')).toEqual([]);
   });
 
-  it('keeps list markers while rendering horizontal rules and formatting list text', () => {
+  it('renders unordered bullets and horizontal rules while formatting list text', () => {
     const source = '/**\n * - **item**\n *\n * ---\n */';
     expect(slices(source, 'strong')).toEqual(['item']);
     expect(slices(source, 'marker')).toEqual(['**', '**']);
     expect(slices(source, 'horizontalRule')).toEqual(['---']);
+    expect(slices(source, 'listMarker')).toEqual(['-']);
   });
 
   it('styles fenced code without parsing its Markdown and leaves indented code raw', () => {

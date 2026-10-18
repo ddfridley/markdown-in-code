@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { extractComments, mapRange, type Span, type CommentRegion } from './comments';
 import { fencedCode, type CodeStyle } from './fenced-code';
 
-export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | CodeStyle;
+export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | 'listMarker' | CodeStyle;
 export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string; level?: number }
 const processor = unified().use(remarkParse).use(remarkGfm);
 
@@ -16,13 +16,15 @@ export function parseComments(source: string, fileName?: string, regions = extra
     function add(style: Style, start: number, end: number, level?: number) {
       for (const span of mapRange(region, { start, end })) decorations.push({ ...span, style, region, ...(level === undefined ? {} : { level }) });
     }
-    function walk(node: typeof tree | typeof tree.children[number] | { type: string; position?: { start: { offset?: number }; end: { offset?: number } }; children?: unknown[] }) {
+    function walk(node: typeof tree | typeof tree.children[number] | { type: string; position?: { start: { offset?: number }; end: { offset?: number } }; children?: unknown[] }, unordered = false) {
       const start = node.position?.start.offset;
       const end = node.position?.end.offset;
       if (start !== undefined && end !== undefined) {
         if (node.type === 'code') {
           const language = 'lang' in node && typeof node.lang === 'string' ? node.lang : undefined;
           decorations.push(...fencedCode(source, region, { start, end }, language));
+        } else if (node.type === 'listItem' && unordered && !('checked' in node && typeof node.checked === 'boolean') && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
+          if (/^[-+*](?=[\t ]|$)/.test(region.markdown.slice(start, end))) add('listMarker', start, start + 1);
         } else if (node.type === 'thematicBreak' && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
           add('horizontalRule', start, end);
         } else if (node.type === 'strong' || node.type === 'emphasis' || node.type === 'delete') {
@@ -56,7 +58,8 @@ export function parseComments(source: string, fileName?: string, regions = extra
         }
       }
       // Code and HTML nodes have no Markdown children: never style Markdown inside them.
-      if ('children' in node) for (const child of node.children ?? []) walk(child as Parameters<typeof walk>[0]);
+      const childUnordered = node.type === 'list' ? 'ordered' in node && node.ordered === false : unordered;
+      if ('children' in node) for (const child of node.children ?? []) walk(child as Parameters<typeof walk>[0], childUnordered);
     }
     walk(tree);
   }

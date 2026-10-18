@@ -64,7 +64,7 @@ This introduces the former 100% H1/H2 regression in an isolated temporary copy a
 npm run test:visual:selftest:docker
 ```
 
-Visual mutation checks first require an ordinary comparison to pass against accepted baselines. Pending review blocks these checks, rather than letting existing differences falsely count as mutation detection. Once clean, missing borders, two-pixel offsets and lost heading sizes must each fail through actual pixel comparisons, with all fifteen captures complete. Mutations cannot be accepted and never modify production source.
+Visual mutation checks first require an ordinary comparison to pass against accepted baselines. Pending review blocks these checks, rather than letting existing differences falsely count as mutation detection. Once clean, missing borders, two-pixel offsets and lost heading sizes must each fail through actual pixel comparisons, with all seventeen captures complete. Mutations cannot be accepted and never modify production source.
 
 ## Pinned environment and tolerance
 
@@ -74,4 +74,6 @@ Only the editor rectangle is captured; measured scrollbar/overview-ruler bounds 
 
 Pixelmatch uses color threshold 0.1, includes antialiasing changes and allows zero differing pixels above that threshold. Missing images fail without being created as accepted files. Dimension mismatches produce a magenta diff canvas.
 
-The fifteen cases cover frames in light/dark/narrow layouts, selected source, standalone groups, rules, fenced code with sidebar/minimap, and heading hierarchy in light/dark/narrow/tight/wrapped layouts. Wrapped enlarged headings can overflow/clip because Monaco calculates wrap points at base font size; the preview records this known limitation. Extra fonts, zoom, high contrast, horizontal scrolling, complete wrapped frames, tables and more code languages still need coverage. Remote CI execution remains unverified.
+The seventeen cases cover frames in light/dark/narrow layouts, selected source, standalone groups, rules, fenced code with sidebar/minimap, heading hierarchy in light/dark/narrow/tight/wrapped layouts, and unordered lists in light/dark themes. Wrapped enlarged headings can overflow/clip because Monaco calculates wrap points at base font size; the preview records this known limitation. Extra fonts, zoom, high contrast, horizontal scrolling, complete wrapped frames, tables and more code languages still need coverage. Remote CI execution remains unverified.
+
+The user approved unordered-list run 1792277196123, including two new images and three changed frame images. All seventeen cases are recorded in the acceptance manifest. Review pages show changed/new cases first, followed by unchanged cases, preserving capture order within each group.

@@ -23,7 +23,7 @@ export async function verifyAccepted(directory) {
 
 const escape = value => String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 export async function writeReview(directory, report) {
-  const cards = report.reports.map(item => {
+  const cards = [...report.reports].sort((a, b) => Number(a.pass) - Number(b.pass)).map(item => {
     const name = escape(item.name);
     const picture = (suffix, title, present = true) => `<div><h3>${title}</h3>${present ? `<a href="${name}.${suffix}.png"><img src="${name}.${suffix}.png" alt="${title}: ${name}"></a>` : '<p>No accepted image: new case.</p>'}</div>`;
     return `<section><h2>${item.pass ? 'UNCHANGED' : 'REVIEW REQUIRED'}: ${name}</h2><p>${escape(item.reason)}</p><div class="images">${picture('expected', 'Accepted', !!item.acceptedSha256)}${picture('actual', 'Preliminary')}${item.pixels > 0 || item.reason.startsWith('Dimensions:') ? picture('diff', 'Difference') : ''}</div></section>`;
