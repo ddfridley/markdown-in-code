@@ -7,7 +7,7 @@ export function commentText(boxes: BoxLine[], decorations: Decoration[]): Decora
   for (const region of new Set(boxes.map(box => box.region))) {
     const excluded = [
       ...decorations.filter(value => value.region === region &&
-        (value.style === 'heading' || value.style === 'marker' || value.style === 'listMarker' || value.style === 'orderedMarker' || value.style === 'taskMarker' || value.style === 'horizontalRule' || value.style.startsWith('code'))),
+        (value.style === 'heading' || value.style === 'marker' || value.style === 'listMarker' || value.style === 'orderedMarker' || value.style === 'taskMarker' || value.style === 'quoteMarker' || value.style === 'horizontalRule' || value.style.startsWith('code'))),
       ...boxes.filter(box => box.region === region).flatMap(box => box.hidden)
     ].sort((a, b) => a.start - b.start);
     for (const segment of region.segments) {

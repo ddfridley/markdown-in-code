@@ -3,8 +3,9 @@ import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import { extractComments, mapRange, type Span, type CommentRegion } from './comments';
 import { fencedCode, type CodeStyle } from './fenced-code';
+import { quoteMarkers, quotedFence } from './blockquotes';
 
-export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | 'listMarker' | 'orderedMarker' | 'taskMarker' | CodeStyle;
+export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | 'listMarker' | 'orderedMarker' | 'taskMarker' | 'quoteMarker' | CodeStyle;
 export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string; level?: number }
 const processor = unified().use(remarkParse).use(remarkGfm);
 
@@ -16,13 +17,18 @@ export function parseComments(source: string, fileName?: string, regions = extra
     function add(style: Style, start: number, end: number, level?: number) {
       for (const span of mapRange(region, { start, end })) decorations.push({ ...span, style, region, ...(level === undefined ? {} : { level }) });
     }
-    function walk(node: typeof tree | typeof tree.children[number] | { type: string; position?: { start: { offset?: number }; end: { offset?: number } }; children?: unknown[] }, unordered = false, ordinal?: number) {
+    function walk(node: typeof tree | typeof tree.children[number] | { type: string; position?: { start: { offset?: number }; end: { offset?: number } }; children?: unknown[] }, unordered = false, ordinal?: number, quoteDepth = 0) {
       const start = node.position?.start.offset;
       const end = node.position?.end.offset;
       if (start !== undefined && end !== undefined) {
-        if (node.type === 'code') {
+        if (node.type === 'blockquote' && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
+          decorations.push(...quoteMarkers(region, { start, end }, quoteDepth));
+        } else if (node.type === 'code') {
           const language = 'lang' in node && typeof node.lang === 'string' ? node.lang : undefined;
-          decorations.push(...fencedCode(source, region, { start, end }, language));
+          if (quoteDepth) {
+            const normalized = quotedFence(region, { start, end }, quoteDepth);
+            decorations.push(...fencedCode(source, normalized, { start: 0, end: normalized.markdown.length }, language).map(value => ({ ...value, region })));
+          } else decorations.push(...fencedCode(source, region, { start, end }, language));
         } else if (node.type === 'listItem' && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
           const text = region.markdown.slice(start, end);
           const marker = /^(?:[-+*]|\d{1,9}[.)])(?=[\t ]|$)/.exec(text);
@@ -76,9 +82,25 @@ export function parseComments(source: string, fileName?: string, regions = extra
       // Code and HTML nodes have no Markdown children: never style Markdown inside them.
       const childUnordered = node.type === 'list' ? 'ordered' in node && node.ordered === false : unordered;
       if ('children' in node) (node.children ?? []).forEach((child, index) => walk(child as Parameters<typeof walk>[0], childUnordered,
-        node.type === 'list' && 'ordered' in node && node.ordered === true ? (('start' in node && typeof node.start === 'number' ? node.start : 1) + index) : undefined));
+        node.type === 'list' && 'ordered' in node && node.ordered === true ? (('start' in node && typeof node.start === 'number' ? node.start : 1) + index) : undefined,
+        quoteDepth + (node.type === 'blockquote' ? 1 : 0)));
     }
     walk(tree);
   }
-  return decorations;
+  // Multiline Markdown spans include explicit quote prefixes in their offsets.
+  // Keep their formatting/hidden markers from covering the replacement bars.
+  const quotes = decorations.filter(value => value.style === 'quoteMarker').sort((a, b) => a.start - b.start);
+  return decorations.flatMap(value => {
+    if (value.style === 'quoteMarker' || value.style === 'codeBackground') return [value];
+    const result: Decoration[] = [];
+    let start = value.start;
+    for (const quote of quotes) {
+      if (quote.end <= start) continue;
+      if (quote.start >= value.end) break;
+      if (quote.start > start) result.push({ ...value, start, end: quote.start });
+      start = quote.end;
+    }
+    if (start < value.end) result.push({ ...value, start });
+    return result;
+  });
 }

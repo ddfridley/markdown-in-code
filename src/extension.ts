@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
   if (applied) context.subscriptions.push(applied);
   const states = new WeakMap<vscode.TextEditor, AppliedState>();
   let sequence = 0;
-  const options: Record<Exclude<Style, CodeStyle | 'heading' | 'orderedMarker' | 'taskMarker'>, vscode.DecorationRenderOptions> = {
+  const options: Record<Exclude<Style, CodeStyle | 'heading' | 'orderedMarker' | 'taskMarker' | 'quoteMarker'>, vscode.DecorationRenderOptions> = {
     commentText: { color: new vscode.ThemeColor('editor.foreground'), light: { color: '#4d4d4d' }, dark: { color: '#a0a0a0' } },
     listMarker: { color: 'transparent', before: {
       contentText: '•', color: new vscode.ThemeColor('editor.foreground'),
@@ -62,6 +62,12 @@ export function activate(context: vscode.ExtensionContext) {
     types.set(style, type);
     context.subscriptions.push(type);
   }
+  const quoteType = vscode.window.createTextEditorDecorationType({ color: 'transparent', before: {
+    contentText: '│', color: new vscode.ThemeColor('editorLineNumber.foreground'),
+    fontStyle: 'normal', fontWeight: 'normal', width: '1ch', margin: '0 -1ch 0 0'
+  } });
+  types.set('quoteMarker', quoteType);
+  context.subscriptions.push(quoteType);
   const session = new RenderingSession();
   function update(editor: vscode.TextEditor) {
     let headingSizes: number[] = [];
@@ -122,6 +128,12 @@ export function activate(context: vscode.ExtensionContext) {
       const box = boxes.find(box => box.region === decoration.region && document.positionAt(box.anchor).line === document.positionAt(decoration.start).line);
       return box ? document.positionAt(box.anchor).character + box.marginColumns : 0;
     };
+    const quoteInset = (decoration: typeof visible[number]) => {
+      const line = document.positionAt(decoration.start).line;
+      const quotes = visible.filter(value => value.style === 'quoteMarker' && document.positionAt(value.start).line === line);
+      const background = visible.find(value => value.style === 'codeBackground' && document.positionAt(value.start).line === line);
+      return quotes.length && background ? document.positionAt(background.start).character - Math.min(...quotes.map(value => document.positionAt(value.start).character)) : 0;
+    };
     for (const [appearance, palette] of Object.entries(codeTypes)) {
       for (const [style, type] of palette) {
         const codeRanges: vscode.DecorationOptions[] = appearance === codeAppearance ? visible.filter(decoration => decoration.style === style).map(decoration => ({
@@ -131,17 +143,17 @@ export function activate(context: vscode.ExtensionContext) {
               contentText: ` ${decoration.label} `,
               color: CODE_PALETTES[codeAppearance].foreground,
               backgroundColor: CODE_PALETTES[codeAppearance].background,
-              textDecoration: `none; position: fixed; left: calc(50cqw + ${(frameColumn(decoration) + 1) / 2}ch - ${config.get<number>('scrollbar.verticalScrollbarSize', 14) / 2}px); transform: translateX(-50%); z-index: 2;`
+              textDecoration: `none; position: fixed; left: calc(50cqw + ${(frameColumn(decoration) + 1 + quoteInset(decoration)) / 2}ch - ${config.get<number>('scrollbar.verticalScrollbarSize', 14) / 2}px); transform: translateX(-50%); z-index: 2;`
             } : undefined,
             after: {
               contentText: '', color: CODE_PALETTES[codeAppearance].foreground,
-              textDecoration: `none; position: fixed; left: ${frameColumn(decoration) + 2}ch; right: 0; margin-top: 0.7em; border-top: 1px solid; z-index: 1;`
+              textDecoration: `none; position: fixed; left: ${frameColumn(decoration) + 2 + quoteInset(decoration)}ch; right: 0; margin-top: 0.7em; border-top: 1px solid; z-index: 1;`
             }
           } } : style === 'codeBackground' ? { renderOptions: { before: {
             contentText: '', backgroundColor: CODE_PALETTES[codeAppearance].background,
             width: '100vw', height: `${lineHeight}px`,
             // Start at the frame's inset, independently of prefixes or empty spans.
-            textDecoration: `none; position: fixed; left: ${frameColumn(decoration) + 1}ch; z-index: 0;`
+            textDecoration: `none; position: fixed; left: ${frameColumn(decoration) + 1 + quoteInset(decoration)}ch; z-index: 0;`
           } } } : {})
         })) : [];
         editor.setDecorations(type, codeRanges);

@@ -391,6 +391,29 @@ export async function run(): Promise<void> {
       assert.deepEqual(texts(editor, restored, 'taskMarker'), ['-', '-']);
       assert.equal(document.getText(), source.replace('[ ]', '[x]'));
     });
+    await test('nested blockquotes retain contained Markdown and source editing', async () => {
+      const source = 'const outside=1;\n/**\n * > # Heading\n * >\n * > > Nested\n * >\n * > ```ts\n * > const answer=42;\n * > ```\n */';
+      const path = join(workspace, 'blockquotes.ts');
+      await writeFile(path, source);
+      const document = await vscode.workspace.openTextDocument(path);
+      const editor = await vscode.window.showTextDocument(document);
+      const rendered = await waitFor(editor, state => texts(editor, state, 'quoteMarker').length === 8);
+      assert.deepEqual(texts(editor, rendered, 'heading'), ['Heading']);
+      assert.deepEqual(texts(editor, rendered, 'codeKeyword'), ['const']);
+      assert.deepEqual(texts(editor, rendered, 'codeFence'), ['```ts', '```']);
+      assert.equal(document.isDirty, false);
+      const nested = source.indexOf('Nested');
+      assert.equal((await select(editor, [[nested, nested]])).ranges.length, 0);
+      await select(editor, [[0, 0]]);
+      await waitFor(editor, state => texts(editor, state, 'quoteMarker').length === 8);
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => state.ranges.length === 0);
+      await editor.edit(edit => edit.replace(new vscode.Range(document.positionAt(nested), document.positionAt(nested + 6)), 'Updated'));
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      const restored = await waitFor(editor, state => state.version === document.version && texts(editor, state, 'quoteMarker').length === 8);
+      assert.ok(texts(editor, restored, 'commentText').join('').includes('Updated'));
+      assert.equal(document.getText(), source.replace('Nested', 'Updated'));
+    });
     console.log(`Integration checks: ${passed.length} passed (VS Code ${vscode.version})`);
   } finally {
     // Fixtures are in the runner's isolated workspace; leave logs for diagnosis.

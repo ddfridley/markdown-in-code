@@ -63,3 +63,5 @@ Heading levels, Setext marker hiding and relative typography are implemented and
 Unordered-list bullets and their screenshots are approved; see [behavior and exact checks](docs/unordered-lists.md).
 
 Ordered and task lists and their screenshots are approved; see [numbering, checkbox behavior and manual checks](docs/ordered-tasks.md).
+
+Blockquotes and their screenshots are approved; see [nested bars, contained Markdown and manual checks](docs/blockquotes.md).

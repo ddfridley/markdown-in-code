@@ -79,3 +79,5 @@ The seventeen cases cover frames in light/dark/narrow layouts, selected source, 
 The user approved unordered-list run 1792277196123, including two new images and three changed frame images. All seventeen cases are recorded in the acceptance manifest. Review pages show changed/new cases first, followed by unchanged cases, preserving capture order within each group.
 
 The user approved ordered/task-list run `1792430470412`, bringing the accepted suite to nineteen images. New feature output still requires separate review.
+
+The user approved blockquote run `1792441995622`, bringing the accepted suite to twenty-one images. Earlier intermediate blockquote runs are superseded. One intermediate wrapped-heading capture differed in minimap layout; the final capture matched its accepted image without changing that baseline.

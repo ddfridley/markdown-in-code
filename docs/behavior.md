@@ -1,6 +1,6 @@
 # Comment rendering behavior
 
-This is the Phase 2 contract for the initial extension. Pure parser and rendering-session tests enforce the rules, Phase 3 checks real VS Code event wiring and decoration updates, and Phase 4 now compares nineteen pinned Linux editor captures. See `docs/visual-testing.md` for coverage, limitations and the baseline review gallery.
+This is the Phase 2 contract for the initial extension. Pure parser and rendering-session tests enforce the rules, Phase 3 checks real VS Code event wiring and decoration updates, and Phase 4 now compares twenty-one pinned Linux editor captures. See `docs/visual-testing.md` for coverage, limitations and the baseline review gallery.
 
 ## Scope and syntax
 
@@ -18,6 +18,7 @@ This is the Phase 2 contract for the initial extension. Pure parser and renderin
 | Setext headings | Levels 1–2 share ATX typography; underline markers hide, leaving their source row blank. Multiline title rows stay separate. |
 | Unordered lists | Render dash/plus/star markers as bullets in framed comments; keep indentation and continuation rows. Inline formatting remains supported. See [behavior and checks](unordered-lists.md). |
 | Ordered and task lists | Number each list sequentially from its starting value; render task brackets as checked/unchecked boxes. Ordered tasks retain numbers. Click to edit source. See [behavior and checks](ordered-tasks.md). |
+| Blockquotes | Replace explicit quote markers with vertical bars in framed comments; preserve nesting, source insets and contained Markdown. Lazy rows keep their source layout. See [behavior and checks](blockquotes.md). |
 | Horizontal rules | Render parser-recognized thematic breaks as theme-colored lines to the editor edge inside framed comments. Editing reveals source. Code, HTML, escaped markers and Setext headings retain their existing behavior. See [manual checks](horizontal-rules.md). |
 | HTML comments inside Markdown | Preserve their syntax and content without interpreting contained Markdown. An HTML block also suppresses Markdown according to remark's block rules. |
 | Fenced code | Opposite light/dark background, simplified JS/TS colors and plain-code fallback. Replace fence rows with code-colored bars and expand the opening language label. No nested Markdown styling. See [fenced-code behavior](fenced-code.md). |
