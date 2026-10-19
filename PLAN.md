@@ -28,6 +28,10 @@ MIEV brings a more mature Markdown parser and broader Markdown features, includi
 
 ### Current implementation status
 
+The user approved ordered/task-list run 1792430470412. Promoted the exact reviewed images and recorded approval for all nineteen cases. The ordered/task slice passes 83 unit tests and 18 real VS Code checks. Next slice: blockquotes, including nested markers and contained headings/lists/code/rules, with separate review.
+
+Committed approved unordered-list output and changed-first review galleries as 0b3f7ec. Implemented ordered/task lists with independent sequential starting values, nested lists, checked/unchecked boxes, compact task syntax and retained numbers for ordered tasks. See docs/ordered-tasks.md for behavior and exact F5 checks. Type checking/build, 83 unit tests and 18 real VS Code checks pass. Preliminary run 1792430470412 matches all seventeen accepted cases; only two new light/dark cases require review. They appear first in the gallery. New slice remains uncommitted pending human review; accepted images are unchanged. Next slice after approval: blockquotes.
+
 The user approved unordered-list run 1792277196123. Promoted the exact reviewed images and recorded approval. Review galleries now place changed/new cases before unchanged cases, with a regression check for ordering. Next slice: ordered markers and task checkboxes, with separate fixtures and human screenshot review.
 
 The user confirmed unordered-list behavior works and requested that unfinished ordered/task-list examples not be locked into this slice. Removed those examples from the manual and visual unordered fixtures while retaining focused marker-classification unit checks. Revised preliminary run 1792277196123 has five cases pending review and twelve unchanged; accepted images remain untouched. Ordered/task lists will get their own fixtures and screenshot approval in the next slice.

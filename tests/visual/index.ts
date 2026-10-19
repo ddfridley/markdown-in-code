@@ -102,6 +102,8 @@ export async function run() {
   await capture('horizontal-rules-light');
   await open('unordered-lists.ts');
   await capture('unordered-lists-light');
+  await open('ordered-tasks.ts');
+  await capture('ordered-tasks-light');
   const headings = await open('headings.ts');
   await capture('headings-light');
   await capture('headings-narrow-light', 850);
@@ -145,5 +147,7 @@ export async function run() {
   await capture('headings-dark');
   await open('unordered-lists.ts');
   await capture('unordered-lists-dark');
-  console.log('Visual fixtures: 17 captured');
+  await open('ordered-tasks.ts');
+  await capture('ordered-tasks-dark');
+  console.log('Visual fixtures: 19 captured');
 }

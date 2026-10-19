@@ -61,3 +61,5 @@ See [horizontal-rule behavior and manual checks](docs/horizontal-rules.md) for t
 Heading levels, Setext marker hiding and relative typography are implemented and approved. See [heading behavior and exact manual checks](docs/headings.md).
 
 Unordered-list bullets and their screenshots are approved; see [behavior and exact checks](docs/unordered-lists.md).
+
+Ordered and task lists and their screenshots are approved; see [numbering, checkbox behavior and manual checks](docs/ordered-tasks.md).

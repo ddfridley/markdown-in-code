@@ -369,6 +369,28 @@ export async function run(): Promise<void> {
       assert.ok(texts(editor, restored, 'commentText').join('').includes('Updated child'));
       assert.equal(document.getText(), source.replace('Child', 'Updated child'));
     });
+    await test('ordered and task markers reveal, restore and update after editing', async () => {
+      const source = 'const outside=1;\n/**\n * 3) First\n * 1) Second\n *\n * - [ ] Pending\n * - [x] Done\n */';
+      const path = join(workspace, 'ordered-tasks.ts');
+      await writeFile(path, source);
+      const document = await vscode.workspace.openTextDocument(path);
+      const editor = await vscode.window.showTextDocument(document);
+      const rendered = await waitFor(editor, state => texts(editor, state, 'taskMarker').length === 2);
+      assert.deepEqual(texts(editor, rendered, 'orderedMarker'), ['3)', '1)']);
+      assert.deepEqual(texts(editor, rendered, 'taskMarker'), ['-', '-']);
+      assert.equal(document.isDirty, false);
+      const pending = source.indexOf('Pending');
+      assert.equal((await select(editor, [[pending, pending]])).ranges.length, 0);
+      await select(editor, [[0, 0]]);
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => state.ranges.length === 0);
+      const check = source.indexOf('[ ]') + 1;
+      await editor.edit(edit => edit.replace(new vscode.Range(document.positionAt(check), document.positionAt(check + 1)), 'x'));
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      const restored = await waitFor(editor, state => state.version === document.version && texts(editor, state, 'taskMarker').length === 2);
+      assert.deepEqual(texts(editor, restored, 'taskMarker'), ['-', '-']);
+      assert.equal(document.getText(), source.replace('[ ]', '[x]'));
+    });
     console.log(`Integration checks: ${passed.length} passed (VS Code ${vscode.version})`);
   } finally {
     // Fixtures are in the runner's isolated workspace; leave logs for diagnosis.

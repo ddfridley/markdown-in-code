@@ -15,7 +15,7 @@ if (process.platform !== 'linux' || process.arch !== 'x64' || process.env.MIC_VI
 if (process.argv.includes('--update')) throw new Error('Automatic baseline updates are disabled. Capture, review index.html, then use visual:accept interactively.');
 const mutation = process.argv.find(argument => argument.startsWith('--mutation='))?.slice(11);
 if (mutation && !['missing-border', 'offset', 'heading-size'].includes(mutation)) throw new Error('Unknown visual mutation');
-const names = new Set(['block-light', 'block-selected-light', 'block-narrow-light', 'block-dark', 'standalone-light', 'horizontal-rules-light', 'fenced-light', 'fenced-sidebar-light', 'fenced-minimap-light', 'fenced-dark', 'headings-light', 'headings-narrow-light', 'headings-tight-light', 'headings-wrapped-light', 'headings-dark', 'unordered-lists-light', 'unordered-lists-dark']);
+const names = new Set(['block-light', 'block-selected-light', 'block-narrow-light', 'block-dark', 'standalone-light', 'horizontal-rules-light', 'fenced-light', 'fenced-sidebar-light', 'fenced-minimap-light', 'fenced-dark', 'headings-light', 'headings-narrow-light', 'headings-tight-light', 'headings-wrapped-light', 'headings-dark', 'unordered-lists-light', 'unordered-lists-dark', 'ordered-tasks-light', 'ordered-tasks-dark']);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const runId = `${Date.now()}`;
 const artifact = mutation ? resolve(root, '.vscode-test/visual-artifacts', `${runId}-mutation`) : resolve(root, 'tests/visual/preliminary', runId);

@@ -2,7 +2,7 @@
 
 Parser-recognized `-`, `+` and `*` list markers become `•` bullets in rendered multiline block comments and grouped standalone `//` comments. Only the marker character is replaced visually; indentation, tabs, following whitespace, continuation rows and source text stay intact. Nested lists keep their source indentation. Bold, italic and inline code remain available in item text, and bullets use the same theme-gray palette as ordinary prose.
 
-Ordered lists and task lists belong to the next slice and are excluded from these manual/visual fixtures, so accepting this slice does not approve their unfinished appearance. Focused unit tests only ensure that their markers are not mistaken for unordered bullets. Thematic breaks remain rules. Escaped markers, fenced/indented code and HTML remain literal, as do lone/trailing line comments and same-line block comments. Comment-prefix extraction retains meaningful star bullets rather than consuming them as structural prefixes.
+Ordered lists and task lists have [separate behavior and fixtures](ordered-tasks.md), so this slice does not approve their appearance. Focused unit tests ensure their markers are not mistaken for unordered bullets. Thematic breaks remain rules. Escaped markers, fenced/indented code and HTML remain literal, as do lone/trailing line comments and same-line block comments. Comment-prefix extraction retains meaningful star bullets rather than consuming them as structural prefixes.
 
 Clicking or selecting a comment reveals its complete source. Leaving restores bullets; toggling and editing while toggled off follow the existing behavior. Soft-wrapped continuation rows retain the existing frame/inset limitations; this feature does not implement HTML list layout.
 

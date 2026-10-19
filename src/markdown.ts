@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { extractComments, mapRange, type Span, type CommentRegion } from './comments';
 import { fencedCode, type CodeStyle } from './fenced-code';
 
-export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | 'listMarker' | CodeStyle;
+export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | 'listMarker' | 'orderedMarker' | 'taskMarker' | CodeStyle;
 export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string; level?: number }
 const processor = unified().use(remarkParse).use(remarkGfm);
 
@@ -16,15 +16,31 @@ export function parseComments(source: string, fileName?: string, regions = extra
     function add(style: Style, start: number, end: number, level?: number) {
       for (const span of mapRange(region, { start, end })) decorations.push({ ...span, style, region, ...(level === undefined ? {} : { level }) });
     }
-    function walk(node: typeof tree | typeof tree.children[number] | { type: string; position?: { start: { offset?: number }; end: { offset?: number } }; children?: unknown[] }, unordered = false) {
+    function walk(node: typeof tree | typeof tree.children[number] | { type: string; position?: { start: { offset?: number }; end: { offset?: number } }; children?: unknown[] }, unordered = false, ordinal?: number) {
       const start = node.position?.start.offset;
       const end = node.position?.end.offset;
       if (start !== undefined && end !== undefined) {
         if (node.type === 'code') {
           const language = 'lang' in node && typeof node.lang === 'string' ? node.lang : undefined;
           decorations.push(...fencedCode(source, region, { start, end }, language));
-        } else if (node.type === 'listItem' && unordered && !('checked' in node && typeof node.checked === 'boolean') && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
-          if (/^[-+*](?=[\t ]|$)/.test(region.markdown.slice(start, end))) add('listMarker', start, start + 1);
+        } else if (node.type === 'listItem' && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
+          const text = region.markdown.slice(start, end);
+          const marker = /^(?:[-+*]|\d{1,9}[.)])(?=[\t ]|$)/.exec(text);
+          if (marker) {
+            const task = 'checked' in node && typeof node.checked === 'boolean'
+              ? /^(?:[-+*]|\d{1,9}[.)])[\t ]+\[[ xX]\]/.exec(text) : null;
+            if (task) {
+              const taskStart = unordered ? start : start + task[0].indexOf('[');
+              if (!unordered && ordinal !== undefined) {
+                for (const span of mapRange(region, { start, end: start + marker[0].length })) decorations.push({ ...span, style: 'orderedMarker', region, label: `${ordinal}.` });
+              }
+              for (const span of mapRange(region, { start: taskStart, end: taskStart + 1 })) decorations.push({ ...span, style: 'taskMarker', region, label: 'checked' in node && node.checked ? '☑' : '☐' });
+              add('marker', taskStart + 1, start + task[0].length);
+            } else if (unordered) add('listMarker', start, start + 1);
+            else if (ordinal !== undefined) {
+              for (const span of mapRange(region, { start, end: start + marker[0].length })) decorations.push({ ...span, style: 'orderedMarker', region, label: `${ordinal}.` });
+            }
+          }
         } else if (node.type === 'thematicBreak' && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
           add('horizontalRule', start, end);
         } else if (node.type === 'strong' || node.type === 'emphasis' || node.type === 'delete') {
@@ -59,7 +75,8 @@ export function parseComments(source: string, fileName?: string, regions = extra
       }
       // Code and HTML nodes have no Markdown children: never style Markdown inside them.
       const childUnordered = node.type === 'list' ? 'ordered' in node && node.ordered === false : unordered;
-      if ('children' in node) for (const child of node.children ?? []) walk(child as Parameters<typeof walk>[0], childUnordered);
+      if ('children' in node) (node.children ?? []).forEach((child, index) => walk(child as Parameters<typeof walk>[0], childUnordered,
+        node.type === 'list' && 'ordered' in node && node.ordered === true ? (('start' in node && typeof node.start === 'number' ? node.start : 1) + index) : undefined));
     }
     walk(tree);
   }

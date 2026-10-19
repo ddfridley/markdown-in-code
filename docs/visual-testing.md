@@ -77,3 +77,5 @@ Pixelmatch uses color threshold 0.1, includes antialiasing changes and allows ze
 The seventeen cases cover frames in light/dark/narrow layouts, selected source, standalone groups, rules, fenced code with sidebar/minimap, heading hierarchy in light/dark/narrow/tight/wrapped layouts, and unordered lists in light/dark themes. Wrapped enlarged headings can overflow/clip because Monaco calculates wrap points at base font size; the preview records this known limitation. Extra fonts, zoom, high contrast, horizontal scrolling, complete wrapped frames, tables and more code languages still need coverage. Remote CI execution remains unverified.
 
 The user approved unordered-list run 1792277196123, including two new images and three changed frame images. All seventeen cases are recorded in the acceptance manifest. Review pages show changed/new cases first, followed by unchanged cases, preserving capture order within each group.
+
+The user approved ordered/task-list run `1792430470412`, bringing the accepted suite to nineteen images. New feature output still requires separate review.

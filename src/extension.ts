@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
   if (applied) context.subscriptions.push(applied);
   const states = new WeakMap<vscode.TextEditor, AppliedState>();
   let sequence = 0;
-  const options: Record<Exclude<Style, CodeStyle | 'heading'>, vscode.DecorationRenderOptions> = {
+  const options: Record<Exclude<Style, CodeStyle | 'heading' | 'orderedMarker' | 'taskMarker'>, vscode.DecorationRenderOptions> = {
     commentText: { color: new vscode.ThemeColor('editor.foreground'), light: { color: '#4d4d4d' }, dark: { color: '#a0a0a0' } },
     listMarker: { color: 'transparent', before: {
       contentText: '•', color: new vscode.ThemeColor('editor.foreground'),
@@ -55,6 +55,13 @@ export function activate(context: vscode.ExtensionContext) {
   const boxFrame = vscode.window.createTextEditorDecorationType({ rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed });
   const boxRule = vscode.window.createTextEditorDecorationType({ rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed });
   context.subscriptions.push(boxHidden, boxFrame, boxRule);
+  // Register additional marker types after existing frame/inline types: Monaco
+  // orders coincident attachments by decoration identity, affecting the inset.
+  for (const style of ['orderedMarker', 'taskMarker'] as const) {
+    const type = vscode.window.createTextEditorDecorationType({ color: 'transparent', rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed });
+    types.set(style, type);
+    context.subscriptions.push(type);
+  }
   const session = new RenderingSession();
   function update(editor: vscode.TextEditor) {
     let headingSizes: number[] = [];
@@ -83,8 +90,15 @@ export function activate(context: vscode.ExtensionContext) {
     const { decorations: markdown, boxes } = session.presentation(key, document.version, document.fileName, () => document.getText(), active, Number(editor.options.tabSize) || 4);
     const visible = [...markdown, ...commentText(boxes, markdown)];
     for (const [style, type] of types) {
-      const ranges = visible.filter(decoration => decoration.style === style).map(decoration => new vscode.Range(document.positionAt(decoration.start), document.positionAt(decoration.end)));
-      editor.setDecorations(type, ranges);
+      const ranges = visible.filter(decoration => decoration.style === style).map(decoration => {
+        const range = new vscode.Range(document.positionAt(decoration.start), document.positionAt(decoration.end));
+        return (style === 'orderedMarker' || style === 'taskMarker') ? { range, renderOptions: { before: {
+          contentText: decoration.label, color: new vscode.ThemeColor('editor.foreground'),
+          fontStyle: 'normal', fontWeight: 'normal', width: `${decoration.end - decoration.start}ch`, margin: `0 -${decoration.end - decoration.start}ch 0 0`
+        } } } : range;
+      });
+      if (style === 'orderedMarker' || style === 'taskMarker') editor.setDecorations(type, ranges as vscode.DecorationOptions[]);
+      else editor.setDecorations(type, ranges as vscode.Range[]);
     }
     const config = vscode.workspace.getConfiguration('editor', document);
     const fontSize = config.get<number>('fontSize', 14);
