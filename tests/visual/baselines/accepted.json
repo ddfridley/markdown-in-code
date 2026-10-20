@@ -2,9 +2,9 @@
   "version": 1,
   "metadataSha256": "fbdb781d3f2fc8b6d1dd74dd66dd35816e7d3caa178854053119390ef5f6146f",
   "images": {
-    "block-dark": "e72e529ea730775a5ed450ffc690cfac4a9171f7d1e173d93511ec5dc6d093ff",
-    "block-light": "0579cb8657ba921fe0de4c7d0461de2f93fc17cfcddde0c7c461c43968b00317",
-    "block-narrow-light": "6c96972179499385d01ad1f6cf215edeeaadaa873db3cbd25657d3bcbdbd32eb",
+    "block-dark": "53b6fa4c8f074be3a2393bdcb27b0a360f66d6c0ba7e95eed8c9b80b464ae074",
+    "block-light": "adf1c39f1c07f960b61432bfdba53a441bcd00019661b27b3a6be7655e523a23",
+    "block-narrow-light": "96495599f4cfb7de420e9dd8d03667a19364daf2076704db67d1396450757446",
     "block-selected-light": "33274d06278d42bac46a9c9a4a08335a554e5d8b93e706e049dda281548a0cf8",
     "fenced-dark": "302b0779910708662f2179a46ded82b220c2d5e1f51e5c895e9c4889447aaf72",
     "fenced-light": "f76c3823322a084d431d1a42a47f636c548dfadea3e77e721f31ea948722e033",
@@ -17,12 +17,14 @@
     "headings-tight-light": "93a5e3324375d25da82f116cd9bbd81e48f914a767b20d996d33ad56e1df2cda",
     "headings-wrapped-light": "bc8d6f5f69e320d3e59112e2843d6fff699327d1e3f48d8460722387c75bf065",
     "headings-dark": "5e810d102627e0a31b8cdbd9bb704c73270c3503b500f806d2852506a906c449",
-    "unordered-lists-light": "59ea1978a67b4c46f538489d051f7e29d99a6387b40d653740801e0f062c653a",
-    "unordered-lists-dark": "ec5f91cfc635876b4fecd6e13284bfd335cd95d93cb158d994baf614d33c1815",
+    "unordered-lists-light": "e1c069a5c8c3cf0347d052885c636a6f35616f1e96601e340bb587ca6d03d6bd",
+    "unordered-lists-dark": "1525dfc2799f423e091d0393ded7e9dbeb5ab8b79080e2b7b59073c070255107",
     "ordered-tasks-light": "50492526f71866770ce2348812788a9c6f52dda20a36e07a30115401d96501e6",
     "ordered-tasks-dark": "deff4927af11295287a35492d4ee9dd6729122f5ed047757425e734e54124640",
     "blockquotes-light": "7d885e15205115b7f2cdb15eaf91c7113fd0c1d70ff88ef6b3ce7a4a7bb6af2b",
-    "blockquotes-dark": "147c81e2da63fa27bf86431e7a06f38bad2ebb0419c7580113a6c67fd82589c0"
+    "blockquotes-dark": "147c81e2da63fa27bf86431e7a06f38bad2ebb0419c7580113a6c67fd82589c0",
+    "links-light": "82e225b1d55d3b0cfe0870f49aff0b7f80389ba765a9c29f32c6fd6e3cbf820f",
+    "links-dark": "6dae9745ab496b0af4bc5bd1fe1bc2d08dcaf5f69226c96c935fb5b87fc8242d"
   },
   "approvals": [
     {
@@ -238,6 +240,62 @@
         "ordered-tasks-dark",
         "blockquotes-light",
         "blockquotes-dark"
+      ]
+    },
+    {
+      "runId": "1792520725803",
+      "reviewedBy": "David Fridley - explicit chat approval of reviewed screenshots and F5 Ctrl+click, October 20, 2026",
+      "acceptedAt": "2026-10-20T18:43:17.966Z",
+      "metadataSha256": "fbdb781d3f2fc8b6d1dd74dd66dd35816e7d3caa178854053119390ef5f6146f",
+      "images": {
+        "block-light": "adf1c39f1c07f960b61432bfdba53a441bcd00019661b27b3a6be7655e523a23",
+        "block-selected-light": "33274d06278d42bac46a9c9a4a08335a554e5d8b93e706e049dda281548a0cf8",
+        "block-narrow-light": "96495599f4cfb7de420e9dd8d03667a19364daf2076704db67d1396450757446",
+        "block-dark": "53b6fa4c8f074be3a2393bdcb27b0a360f66d6c0ba7e95eed8c9b80b464ae074",
+        "standalone-light": "60920b48d37519e4d86621d7443345a239f2c77b5dda2a600f2a9de3e0460ca6",
+        "horizontal-rules-light": "75ca2984f3cc7457d7c2c326ad792663c242ef9b69130732c7d2566e71e13418",
+        "fenced-light": "f76c3823322a084d431d1a42a47f636c548dfadea3e77e721f31ea948722e033",
+        "fenced-sidebar-light": "d43fb2984beb2c619c43c0520eb2fb4aff285859969d50a1d86cca95e8f932e8",
+        "fenced-minimap-light": "b394e949cc86c694947b579a5f415ffdc1d619f70aaf9802b1fc3735aa40eef6",
+        "fenced-dark": "302b0779910708662f2179a46ded82b220c2d5e1f51e5c895e9c4889447aaf72",
+        "headings-light": "cd01cf5227f5a0a2037179e0f614e2d3c63d382486e7433c2df13427e0416ad3",
+        "headings-narrow-light": "8059bf9e78fbe9588232ee700cc55a4f33dce8e10e057914a08e4ade88483ef7",
+        "headings-tight-light": "93a5e3324375d25da82f116cd9bbd81e48f914a767b20d996d33ad56e1df2cda",
+        "headings-wrapped-light": "bc8d6f5f69e320d3e59112e2843d6fff699327d1e3f48d8460722387c75bf065",
+        "headings-dark": "5e810d102627e0a31b8cdbd9bb704c73270c3503b500f806d2852506a906c449",
+        "unordered-lists-light": "e1c069a5c8c3cf0347d052885c636a6f35616f1e96601e340bb587ca6d03d6bd",
+        "unordered-lists-dark": "1525dfc2799f423e091d0393ded7e9dbeb5ab8b79080e2b7b59073c070255107",
+        "ordered-tasks-light": "50492526f71866770ce2348812788a9c6f52dda20a36e07a30115401d96501e6",
+        "ordered-tasks-dark": "deff4927af11295287a35492d4ee9dd6729122f5ed047757425e734e54124640",
+        "blockquotes-light": "7d885e15205115b7f2cdb15eaf91c7113fd0c1d70ff88ef6b3ce7a4a7bb6af2b",
+        "blockquotes-dark": "147c81e2da63fa27bf86431e7a06f38bad2ebb0419c7580113a6c67fd82589c0",
+        "links-light": "82e225b1d55d3b0cfe0870f49aff0b7f80389ba765a9c29f32c6fd6e3cbf820f",
+        "links-dark": "6dae9745ab496b0af4bc5bd1fe1bc2d08dcaf5f69226c96c935fb5b87fc8242d"
+      },
+      "cases": [
+        "block-light",
+        "block-selected-light",
+        "block-narrow-light",
+        "block-dark",
+        "standalone-light",
+        "horizontal-rules-light",
+        "fenced-light",
+        "fenced-sidebar-light",
+        "fenced-minimap-light",
+        "fenced-dark",
+        "headings-light",
+        "headings-narrow-light",
+        "headings-tight-light",
+        "headings-wrapped-light",
+        "headings-dark",
+        "unordered-lists-light",
+        "unordered-lists-dark",
+        "ordered-tasks-light",
+        "ordered-tasks-dark",
+        "blockquotes-light",
+        "blockquotes-dark",
+        "links-light",
+        "links-dark"
       ]
     }
   ]

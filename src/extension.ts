@@ -38,15 +38,15 @@ export function activate(context: vscode.ExtensionContext) {
     hintEditor = undefined;
   }
   context.subscriptions.push(openedHint, { dispose: clearOpenedHint });
-  async function openTarget(target: { kind: 'external' | 'editor'; uri: string }, source?: { editor: vscode.TextEditor; start: number }) {
-    const sourceVersion = source?.editor.document.version;
+  async function openTarget(target: { kind: 'external' | 'editor'; uri: string }, source: { editor: vscode.TextEditor; start: number }) {
+    const sourceVersion = source.editor.document.version;
     if (testing) openedLinks.push(target.uri);
     if (testing && process.env.MIC_CAPTURE_LINKS === '1' && target.kind === 'external') return;
     let result = true;
     if (target.kind === 'external') result = await vscode.env.openExternal(vscode.Uri.parse(target.uri));
     else await vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(target.uri));
     if (testing) linkOpenResults.push({ uri: target.uri, result });
-    if (result && target.kind === 'external' && source && !source.editor.document.isClosed && source.editor.document.version === sourceVersion) {
+    if (result && target.kind === 'external' && !source.editor.document.isClosed && source.editor.document.version === sourceVersion) {
       clearOpenedHint();
       hintEditor = source.editor;
       const position = source.editor.document.positionAt(source.start);

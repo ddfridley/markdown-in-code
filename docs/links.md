@@ -1,5 +1,7 @@
 # Links and references
 
+Approved in F5 and screenshot review on October 20, 2026. All 23 images from run 1792520725803 are accepted, including the two link cases; earlier pending-review notes below are historical. Ctrl+click, local-file return and the floating two-second opened hint have user confirmation. Tables follow this slice; embedded HTML comments come afterward.
+
 In all supported comment forms, including same-line block comments and lone/trailing line comments, Markdown links show an underlined, theme-colored label. Their surrounding brackets, destination and optional title are hidden visually. Bold, italic and inline-code formatting inside labels retains its existing behavior. Angle-bracket autolinks and email links hide their angle brackets; GFM bare URLs/email addresses retain their readable text and gain link styling. Unframed comments retain their comment delimiters.
 
 Full, collapsed and shortcut reference links resolve definitions within the same extracted comment. Identifiers follow the parser's Markdown normalization and case-insensitive matching; the first definition wins. Definitions stay visible so destinations remain inspectable; the destination itself is a styled native link and uses the same cursor-preserving activation. Unresolved references stay literal. Source whitespace, escapes and entities retain the editor's source-based layout rather than HTML text normalization.
