@@ -5,8 +5,9 @@ import { extractComments, mapRange, type Span, type CommentRegion } from './comm
 import { fencedCode, type CodeStyle } from './fenced-code';
 import { quoteMarkers, quotedFence } from './blockquotes';
 import { linkDecorations, linkDefinitions } from './links';
+import { tableDecorations } from './tables';
 
-export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | 'listMarker' | 'orderedMarker' | 'taskMarker' | 'quoteMarker' | 'link' | CodeStyle;
+export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | 'listMarker' | 'orderedMarker' | 'taskMarker' | 'quoteMarker' | 'link' | 'tableGap' | 'tableHeader' | 'tableRow' | 'tableRowHeader' | CodeStyle;
 export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string; level?: number; destination?: string; title?: string; activation?: Span }
 const processor = unified().use(remarkParse).use(remarkGfm);
 
@@ -16,10 +17,12 @@ export function parseComments(source: string, fileName?: string, regions = extra
   for (const region of regions) {
     const tree = processor.parse(region.markdown);
     const definitions = linkDefinitions(tree);
+    const tables: Parameters<typeof tableDecorations>[0][] = [];
     function add(style: Style, start: number, end: number, level?: number) {
       for (const span of mapRange(region, { start, end })) decorations.push({ ...span, style, region, ...(level === undefined ? {} : { level }) });
     }
     function walk(node: Parameters<typeof linkDecorations>[0], unordered = false, ordinal?: number, quoteDepth = 0) {
+      if (node.type === 'table') tables.push(node);
       const start = node.position?.start.offset;
       const end = node.position?.end.offset;
       if (start !== undefined && end !== undefined) {
@@ -89,12 +92,13 @@ export function parseComments(source: string, fileName?: string, regions = extra
         quoteDepth + (node.type === 'blockquote' ? 1 : 0)));
     }
     walk(tree);
+    for (const table of tables) decorations.push(...tableDecorations(table, region, decorations));
   }
   // Multiline Markdown spans include explicit quote prefixes in their offsets.
   // Keep their formatting/hidden markers from covering the replacement bars.
   const quotes = decorations.filter(value => value.style === 'quoteMarker').sort((a, b) => a.start - b.start);
   return decorations.flatMap(value => {
-    if (value.style === 'quoteMarker' || value.style === 'codeBackground') return [value];
+    if (value.style === 'quoteMarker' || value.style === 'codeBackground' || value.start === value.end) return [value];
     const result: Decoration[] = [];
     let start = value.start;
     for (const quote of quotes) {

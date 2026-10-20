@@ -1,5 +1,7 @@
 # Testing
 
+Current table-slice verification: 110 unit tests, typecheck/build, 24 real VS Code integration checks and the 33-activation native link suite pass. The screenshot suite has 29 cases: all 29 images are approved, including the long, wrapped and horizontally scrolled plan table. Table tests cover LF/CRLF mapping, alignment, omitted outer pipes, inline/link composition, escaped pipes, empty cells, source reveal, edits, toggle and explicit layout fallbacks. See [table review steps](tables.md). Historical counts below describe earlier slices.
+
 Select the version in `.nvmrc` through NVS before running npm commands. In this Windows setup, open Git Bash at the repository root and run:
 
 ```sh

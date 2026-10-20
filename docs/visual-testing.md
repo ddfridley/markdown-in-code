@@ -1,5 +1,7 @@
 # Screenshot regression tests and human review
 
+The link slice's 23 images were approved on October 20, 2026, from run 1792520725803 and committed as cd69445. The current table slice expands coverage to 29 cases. [Run 1792524599284](../tests/visual/preliminary/1792524599284/index.html) contains all 29 images explicitly approved by the user on October 20, 2026. Those exact images are now accepted; future changed/new output still requires separate review.
+
 Screenshot tests compare newly generated pixels against human-accepted images. A changed or missing accepted image fails the test. Generating a screenshot never accepts it.
 
 ## Capture and compare

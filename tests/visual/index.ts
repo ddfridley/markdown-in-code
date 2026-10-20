@@ -106,6 +106,17 @@ export async function run() {
   await capture('ordered-tasks-light');
   await open('blockquotes.ts');
   await capture('blockquotes-light');
+  await open('tables.ts');
+  await capture('tables-light');
+  await capture('tables-narrow-light', 850);
+  const longTable = await open('tables-long.ts');
+  assert.deepEqual(longTable.document.getText().slice(api.snapshot(longTable)!.ranges.find(value => value.style === 'tableHeader')!.start,
+    api.snapshot(longTable)!.ranges.find(value => value.style === 'tableHeader')!.end), 'Order');
+  await capture('tables-long-light');
+  await vscode.workspace.getConfiguration('editor', longTable.document).update('wordWrap', 'on', vscode.ConfigurationTarget.Global);
+  await capture('tables-long-wrapped-light');
+  await capture('tables-long-scrolled-light');
+  await vscode.workspace.getConfiguration('editor', longTable.document).update('wordWrap', 'off', vscode.ConfigurationTarget.Global);
   const plainLinks = await open('links.ts');
   await capture('links-light', 1200, undefined, 'Local fixture');
   assert.equal(vscode.window.activeTextEditor, plainLinks, 'Plain click must not navigate');
@@ -160,6 +171,8 @@ export async function run() {
   await capture('ordered-tasks-dark');
   await open('blockquotes.ts');
   await capture('blockquotes-dark');
+  await open('tables.ts');
+  await capture('tables-dark');
   const linksEditor = await open('links.ts');
   await vscode.commands.executeCommand('vscode.executeLinkProvider', linksEditor.document.uri);
   const originalSelection = linksEditor.selection;
@@ -174,5 +187,5 @@ export async function run() {
   assert.ok(linksEditor.selection.isEqual(originalSelection), 'Ctrl+click must not move the source selection');
   assert.ok(api.snapshot(linksEditor)!.ranges.some(value => value.style === 'link'), 'Ctrl+click must not reveal raw source');
   console.log('PASS native Ctrl+click opens local target without source reveal');
-  console.log('Visual fixtures: 23 captured');
+  console.log('Visual fixtures: 29 captured');
 }

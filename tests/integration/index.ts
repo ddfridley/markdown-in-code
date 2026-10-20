@@ -459,6 +459,71 @@ export async function run(): Promise<void> {
       assert.equal(document.getText(), source);
       assert.equal(document.isDirty, false);
     });
+    await test('tables retain inline formatting, reveal source and recompute after editing', async () => {
+      const source = 'const outside=1;\n/*\n| **Name** | N |\n| --- | ---: |\n| A | 1 |\n*/';
+      const path = join(workspace, 'tables.ts');
+      await writeFile(path, source);
+      const document = await vscode.workspace.openTextDocument(path);
+      const editor = await vscode.window.showTextDocument(document);
+      const rendered = await waitFor(editor, state => state.ranges.some(value => value.style === 'tableGap'));
+      assert.deepEqual(texts(editor, rendered, 'strong'), ['Name']);
+      assert.deepEqual(texts(editor, rendered, 'tableHeader'), ['**Name**', 'N']);
+      const cell = source.indexOf('| A |') + 2;
+      assert.equal((await select(editor, [[cell, cell]])).ranges.length, 0);
+      await editor.edit(edit => edit.replace(new vscode.Range(document.positionAt(cell), document.positionAt(cell + 1)), 'Longer cell'));
+      await select(editor, [[0, 0]]);
+      await waitFor(editor, state => state.version === document.version && state.ranges.some(value => value.style === 'tableGap'));
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => state.ranges.length === 0);
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => state.ranges.some(value => value.style === 'tableGap'));
+      assert.equal(document.getText(), source.replace('| A |', '| Longer cell |'));
+    });
+    await test('wide plain tables use unwrapped rows while retaining source editing', async () => {
+      const source = `const outside=1;\n/*\n| Name | Description |\n| --- | --- |\n| First | ${'Long description '.repeat(12)} |\n| Second | Short |\n*/`;
+      const path = join(workspace, 'tables-wide.ts');
+      await writeFile(path, source);
+      const document = await vscode.workspace.openTextDocument(path);
+      const editor = await vscode.window.showTextDocument(document);
+      await waitFor(editor, state => state.ranges.filter(value => value.style === 'tableRow').length === 3);
+      const position = source.indexOf('First');
+      assert.equal((await select(editor, [[position, position]])).ranges.length, 0);
+      const restored = await select(editor, [[0, 0]]);
+      assert.equal(restored.ranges.filter(value => value.style === 'tableRow').length, 3);
+      assert.equal(document.getText(), source);
+      assert.equal(document.isDirty, false);
+    });
+    await test('oversized tables fall back safely and leave following tables functional', async () => {
+      const source = await readFile(join(extension.extensionPath, 'tests/fixtures/tables-overflow.ts'), 'utf8');
+      const path = join(workspace, 'tables-overflow.ts');
+      await writeFile(path, source);
+      const document = await vscode.workspace.openTextDocument(path);
+      const editor = await vscode.window.showTextDocument(document);
+      const firstEnd = source.indexOf('*/') + 2;
+      const state = await waitFor(editor, state => state.ranges.some(value => value.style === 'tableHeader'));
+      assert.ok(source.split('\n').some(line => line.length > 4096));
+      assert.ok(state.ranges.filter(value => value.style.startsWith('table')).every(value => value.start >= firstEnd));
+      const cell = source.indexOf('This oversized cell');
+      const raw = await select(editor, [[cell, cell]]);
+      assert.ok(raw.ranges.every(value => value.start >= firstEnd));
+      await editor.edit(edit => edit.insert(document.positionAt(cell), 'Edited: '));
+      const restored = await select(editor, [[0, 0]]);
+      assert.ok(restored.ranges.some(value => value.style === 'tableHeader'));
+      assert.ok(restored.ranges.filter(value => value.style.startsWith('table')).every(value => value.start >= document.getText().indexOf('*/') + 2));
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => state.ranges.length === 0);
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => state.ranges.some(value => value.style === 'tableHeader'));
+      assert.equal(document.getText(), source.slice(0, cell) + 'Edited: ' + source.slice(cell));
+      assert.ok(document.getText().includes('END OF OVERSIZED CELL'));
+      const cellEnd = document.getText().indexOf('END OF OVERSIZED CELL') + 'END OF OVERSIZED CELL'.length;
+      await editor.edit(edit => edit.replace(new vscode.Range(document.positionAt(cell), document.positionAt(cellEnd)), 'Recovered'));
+      const recovered = await waitFor(editor, state => state.version === document.version && state.ranges.some(value => value.style === 'tableHeader' && value.start < document.getText().indexOf('*/')));
+      assert.deepEqual(recovered.ranges.filter(value => value.style === 'tableHeader' && value.start < document.getText().indexOf('*/'))
+        .map(value => document.getText().slice(value.start, value.end)), ['Name', 'Description']);
+      assert.ok(document.getText().includes('| Long | Recovered |'));
+      assert.equal(document.getText(), source.slice(0, cell) + 'Recovered' + source.slice(source.indexOf('END OF OVERSIZED CELL') + 'END OF OVERSIZED CELL'.length));
+    });
     console.log(`Integration checks: ${passed.length} passed (VS Code ${vscode.version})`);
   } finally {
     // Fixtures are in the runner's isolated workspace; leave logs for diagnosis.

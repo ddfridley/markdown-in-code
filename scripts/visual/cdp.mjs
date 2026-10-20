@@ -30,7 +30,7 @@ export async function connect(port) {
   };
 }
 
-export async function captureEditor(cdp, width, mutation, theme) {
+export async function captureEditor(cdp, width, mutation, theme, scrollRight = false) {
   await cdp.command('Emulation.setDeviceMetricsOverride', { width, height: 800, deviceScaleFactor: 1, mobile: false });
   await cdp.command('Runtime.evaluate', { expression: `(() => {
     if (!document.getElementById('mic-visual-style')) {
@@ -65,6 +65,23 @@ export async function captureEditor(cdp, width, mutation, theme) {
       const x = Math.ceil(rect.x);
       return { x, y: Math.ceil(rect.y), width: right - x, height: Math.floor(rect.height), scale: 1 };
     })()` });
+  if (scrollRight) {
+    const before = await cdp.command('Runtime.evaluate', { returnByValue: true, expression: `(() => {
+      const editor = document.querySelector('.monaco-editor');
+      const bounds = editor.getBoundingClientRect();
+      const slider = editor.querySelector('.scrollbar.horizontal .slider').getBoundingClientRect();
+      return { sliderX: slider.left + slider.width / 2, sliderY: slider.top + slider.height / 2,
+        sliderLeft: slider.left, right: bounds.right };
+    })()` });
+    const point = before.result.value;
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: point.sliderX, y: point.sliderY });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', x: point.sliderX, y: point.sliderY, button: 'left', buttons: 1, clickCount: 1 });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: Math.min(point.sliderX + 200, point.right - 30), y: point.sliderY, button: 'left', buttons: 1 });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', x: Math.min(point.sliderX + 200, point.right - 30), y: point.sliderY, button: 'left', buttons: 0, clickCount: 1 });
+    const after = await cdp.command('Runtime.evaluate', { expression: `new Promise(resolve => setTimeout(() => resolve(document.querySelector('.monaco-editor .scrollbar.horizontal .slider').getBoundingClientRect().left), 250))`, awaitPromise: true });
+    if (!(after.result.value > point.sliderLeft + 50)) throw new Error('Wrapped table did not scroll horizontally');
+    console.log('PASS wrapped table actually scrolls horizontally');
+  }
   const clip = layout.result.value;
   if (!clip || clip.width < 100 || clip.height < 100) throw new Error(`Invalid editor clip: ${JSON.stringify(clip)}`);
   let previous;

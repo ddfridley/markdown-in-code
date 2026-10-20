@@ -4,6 +4,8 @@ Phase 1 prototype of a VS Code extension for Markdown in JavaScript/TypeScript c
 
 The prototype renders inline formatting, headings, horizontal rules, lists, task boxes, blockquotes and links in code comments. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions have unit, extension-host and screenshot coverage.
 
+The table slice adds aligned GFM columns, bold headers and header rules while retaining inline formatting and click-to-edit. See [table behavior, limits and F5 checks](docs/tables.md). Table screenshots and the preceding link slice have human approval.
+
 Block comments now display an open-right `┌─ / │ / └─` frame, with one column between the vertical stroke and Markdown content. Source comment delimiters/prefixes reappear during editing. See [frame behavior and manual checks](docs/comment-boxes.md), including mixed prefixes and compact inline blocks. Real extension-host checks cover these transitions; screenshot comparisons pass in the pinned Linux environment; the fenced-code screenshots and F5 behavior have been reviewed and approved.
 
 Horizontal borders reach the editor viewport's right edge. Two or more consecutive `//` comments with only whitespace to their left also form a framed Markdown block; trailing comments and isolated `//` lines remain inline.

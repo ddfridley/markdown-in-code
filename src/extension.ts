@@ -66,7 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
   const navigationPins = new Map<vscode.TextEditor, { document: vscode.TextDocument; column: vscode.ViewColumn | undefined; version: number; start: number; end: number; origin: readonly vscode.Selection[]; activation: vscode.Range; gestureUntil: number; focusUntil: number }>();
   context.subscriptions.push({ dispose: () => { for (const pending of pendingLinks.values()) clearTimeout(pending.timer); pendingLinks.clear(); navigationPins.clear(); } });
   let sequence = 0;
-  const options: Record<Exclude<Style, CodeStyle | 'heading' | 'orderedMarker' | 'taskMarker' | 'quoteMarker' | 'link'>, vscode.DecorationRenderOptions> = {
+  const options: Record<Exclude<Style, CodeStyle | 'heading' | 'orderedMarker' | 'taskMarker' | 'quoteMarker' | 'link' | 'tableGap' | 'tableHeader' | 'tableRow' | 'tableRowHeader'>, vscode.DecorationRenderOptions> = {
     commentText: { color: new vscode.ThemeColor('editor.foreground'), light: { color: '#4d4d4d' }, dark: { color: '#a0a0a0' } },
     listMarker: { color: 'transparent', before: {
       contentText: '•', color: new vscode.ThemeColor('editor.foreground'),
@@ -123,6 +123,15 @@ export function activate(context: vscode.ExtensionContext) {
   const linkType = vscode.window.createTextEditorDecorationType({ color: new vscode.ThemeColor('textLink.foreground'), textDecoration: 'underline', rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed });
   types.set('link', linkType);
   context.subscriptions.push(linkType);
+  const tableGapType = vscode.window.createTextEditorDecorationType({ color: 'transparent', textDecoration: 'none; font-size: 0;', rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed });
+  const tableHeaderType = vscode.window.createTextEditorDecorationType({ fontWeight: 'bold', rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed });
+  types.set('tableGap', tableGapType);
+  types.set('tableHeader', tableHeaderType);
+  context.subscriptions.push(tableGapType, tableHeaderType);
+  for (const style of ['tableRow', 'tableRowHeader'] as const) {
+    const type = vscode.window.createTextEditorDecorationType({ color: 'transparent', textDecoration: 'none; font-size: 0;', rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed });
+    types.set(style, type); context.subscriptions.push(type);
+  }
   const session = new RenderingSession();
   function update(editor: vscode.TextEditor) {
     // Rendering can run for theme/focus/options changes before the mouse event
@@ -185,13 +194,26 @@ export function activate(context: vscode.ExtensionContext) {
     for (const [style, type] of types) {
       const ranges = visible.filter(decoration => decoration.style === style).map(decoration => {
         const range = new vscode.Range(document.positionAt(decoration.start), document.positionAt(decoration.end));
+        if (style === 'tableRow' || style === 'tableRowHeader') return { range, renderOptions: { before: {
+          contentText: decoration.label, color: new vscode.ThemeColor('editor.foreground'),
+          fontStyle: 'normal', fontWeight: style === 'tableRowHeader' ? 'bold' : 'normal',
+          // Measured inline width lets Monaco expose a horizontal scrollbar even
+          // with word wrap on; absolute positioning only painted clipped overflow.
+          width: `${decoration.label?.length ?? 0}ch`,
+          textDecoration: 'none; font-size: var(--vscode-editor-font-size); letter-spacing: normal; white-space: pre; pointer-events: none;'
+        } } };
+        if (style === 'tableGap') return { range, renderOptions: { before: {
+          contentText: decoration.label, color: new vscode.ThemeColor('editor.foreground'),
+          fontStyle: 'normal', fontWeight: 'normal',
+          textDecoration: 'none; font-size: var(--vscode-editor-font-size); letter-spacing: normal; white-space: pre;'
+        } } };
         if (style === 'link') return { range, hoverMessage: new vscode.MarkdownString().appendText(`${decoration.title ? decoration.title + '\n' : ''}${decoration.destination}\nMarkdown in Code: Open Link at Cursor`) };
         return (style === 'orderedMarker' || style === 'taskMarker') ? { range, renderOptions: { before: {
           contentText: decoration.label, color: new vscode.ThemeColor('editor.foreground'),
           fontStyle: 'normal', fontWeight: 'normal', width: `${decoration.end - decoration.start}ch`, margin: `0 -${decoration.end - decoration.start}ch 0 0`
         } } } : range;
       });
-      if (style === 'orderedMarker' || style === 'taskMarker' || style === 'link') editor.setDecorations(type, ranges as vscode.DecorationOptions[]);
+      if (style === 'orderedMarker' || style === 'taskMarker' || style === 'link' || style === 'tableGap' || style === 'tableRow' || style === 'tableRowHeader') editor.setDecorations(type, ranges as vscode.DecorationOptions[]);
       else editor.setDecorations(type, ranges as vscode.Range[]);
     }
     const config = vscode.workspace.getConfiguration('editor', document);
