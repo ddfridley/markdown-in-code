@@ -4,9 +4,10 @@ import remarkGfm from 'remark-gfm';
 import { extractComments, mapRange, type Span, type CommentRegion } from './comments';
 import { fencedCode, type CodeStyle } from './fenced-code';
 import { quoteMarkers, quotedFence } from './blockquotes';
+import { linkDecorations, linkDefinitions } from './links';
 
-export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | 'listMarker' | 'orderedMarker' | 'taskMarker' | 'quoteMarker' | CodeStyle;
-export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string; level?: number }
+export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' | 'marker' | 'horizontalRule' | 'commentText' | 'listMarker' | 'orderedMarker' | 'taskMarker' | 'quoteMarker' | 'link' | CodeStyle;
+export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string; level?: number; destination?: string; title?: string; activation?: Span }
 const processor = unified().use(remarkParse).use(remarkGfm);
 
 /** Small AST-to-range adapter inspired by MIEV; offsets remain UTF-16 throughout. */
@@ -14,13 +15,15 @@ export function parseComments(source: string, fileName?: string, regions = extra
   const decorations: Decoration[] = [];
   for (const region of regions) {
     const tree = processor.parse(region.markdown);
+    const definitions = linkDefinitions(tree);
     function add(style: Style, start: number, end: number, level?: number) {
       for (const span of mapRange(region, { start, end })) decorations.push({ ...span, style, region, ...(level === undefined ? {} : { level }) });
     }
-    function walk(node: typeof tree | typeof tree.children[number] | { type: string; position?: { start: { offset?: number }; end: { offset?: number } }; children?: unknown[] }, unordered = false, ordinal?: number, quoteDepth = 0) {
+    function walk(node: Parameters<typeof linkDecorations>[0], unordered = false, ordinal?: number, quoteDepth = 0) {
       const start = node.position?.start.offset;
       const end = node.position?.end.offset;
       if (start !== undefined && end !== undefined) {
+        decorations.push(...linkDecorations(node, region, definitions));
         if (node.type === 'blockquote' && (region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) {
           decorations.push(...quoteMarkers(region, { start, end }, quoteDepth));
         } else if (node.type === 'code') {

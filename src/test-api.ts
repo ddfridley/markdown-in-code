@@ -14,6 +14,8 @@ export interface AppliedState {
 
 /** Exposed only in ExtensionMode.Test, after all setDecorations calls complete. */
 export interface TestApi {
+  readonly openedLinks: readonly string[];
+  readonly linkOpenResults: readonly { uri: string; result: boolean }[];
   snapshot(editor: vscode.TextEditor): AppliedState | undefined;
   onDidApply: vscode.Event<vscode.TextEditor>;
 }

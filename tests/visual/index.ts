@@ -18,7 +18,7 @@ function applied(editor: vscode.TextEditor, predicate: (state: AppliedState) => 
     check();
   });
 }
-async function capture(name: string, width = 1200) {
+async function capture(name: string, width = 1200, controlClick?: string, plainClick?: string) {
   await vscode.commands.executeCommand('notifications.clearAll');
   const bridge = process.env.MIC_VISUAL_BRIDGE!;
   const acknowledgment = join(bridge, 'acks', `${name}.json`);
@@ -36,7 +36,7 @@ async function capture(name: string, width = 1200) {
     }
     void check();
   });
-  await writeFile(join(bridge, 'requests', `${name}.json`), JSON.stringify({ name, width, theme: name.endsWith('-dark') ? 'dark' : 'light' }));
+  await writeFile(join(bridge, 'requests', `${name}.json`), JSON.stringify({ name, width, theme: name.endsWith('-dark') ? 'dark' : 'light', controlClick, plainClick }));
   await finished;
 }
 
@@ -106,6 +106,13 @@ export async function run() {
   await capture('ordered-tasks-light');
   await open('blockquotes.ts');
   await capture('blockquotes-light');
+  const plainLinks = await open('links.ts');
+  await capture('links-light', 1200, undefined, 'Local fixture');
+  assert.equal(vscode.window.activeTextEditor, plainLinks, 'Plain click must not navigate');
+  const localLabel = plainLinks.document.getText().indexOf('Local fixture');
+  await applied(plainLinks, state => !state.ranges.some(value => value.style === 'link' && value.start === localLabel));
+  assert.equal(vscode.window.activeTextEditor, plainLinks, 'Plain click must edit rather than navigate');
+  console.log('PASS normal link click reveals source without navigation');
   const headings = await open('headings.ts');
   await capture('headings-light');
   await capture('headings-narrow-light', 850);
@@ -153,5 +160,19 @@ export async function run() {
   await capture('ordered-tasks-dark');
   await open('blockquotes.ts');
   await capture('blockquotes-dark');
-  console.log('Visual fixtures: 21 captured');
+  const linksEditor = await open('links.ts');
+  await vscode.commands.executeCommand('vscode.executeLinkProvider', linksEditor.document.uri);
+  const originalSelection = linksEditor.selection;
+  const navigated = new Promise<void>((resolve, reject) => {
+    const subscription = vscode.window.onDidChangeActiveTextEditor(editor => {
+      if (editor?.document.fileName.endsWith('unordered-lists.ts')) { clearTimeout(timer); subscription.dispose(); resolve(); }
+    });
+    const timer = setTimeout(() => { subscription.dispose(); reject(new Error('Native Ctrl+click did not open local fixture')); }, 10000);
+  });
+  await capture('links-dark', 1200, 'Local fixture');
+  await navigated;
+  assert.ok(linksEditor.selection.isEqual(originalSelection), 'Ctrl+click must not move the source selection');
+  assert.ok(api.snapshot(linksEditor)!.ranges.some(value => value.style === 'link'), 'Ctrl+click must not reveal raw source');
+  console.log('PASS native Ctrl+click opens local target without source reveal');
+  console.log('Visual fixtures: 23 captured');
 }

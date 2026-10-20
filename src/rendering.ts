@@ -23,7 +23,7 @@ export class RenderingSession {
     return this.presentation(uri, version, fileName, readText, selections).decorations;
   }
 
-  presentation(uri: string, version: number, fileName: string, readText: () => string, selections: Span[], tabSize = 4): { decorations: Decoration[]; boxes: BoxLine[] } {
+  presentation(uri: string, version: number, fileName: string, readText: () => string, selections: Span[], tabSize = 4, navigation?: Span & { version: number }): { decorations: Decoration[]; boxes: BoxLine[] } {
     if (!this.enabled) return { decorations: [], boxes: [] };
     let cached = this.cache.get(uri);
     if (!cached || cached.version !== version || cached.fileName !== fileName) {
@@ -38,6 +38,7 @@ export class RenderingSession {
     }
     const revealed = new Set<CommentRegion>();
     for (const region of cached.regions) {
+      if (navigation?.version === version && navigation.start === region.start && navigation.end === region.end) continue;
       if (selections.some(selection => revealsComment(region, selection))) {
         revealed.add(region);
       }

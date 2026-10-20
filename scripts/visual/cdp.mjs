@@ -79,3 +79,50 @@ export async function captureEditor(cdp, width, mutation, theme) {
   }
   throw new Error('Editor pixels did not stabilize across three captures');
 }
+
+/** Exercise VS Code's native modifier-click path against a local fixture only. */
+export async function controlClickLink(cdp, label, control = true, fraction = 0.5) {
+  const result = await cdp.command('Runtime.evaluate', { returnByValue: true, expression: `(() => {
+    for (const line of document.querySelectorAll('.monaco-editor .view-lines .view-line')) {
+      const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
+      const nodes = []; let text = '';
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        nodes.push({ node, start: text.length }); text += node.textContent.split(String.fromCharCode(160)).join(' ');
+      }
+      const index = text.indexOf(${JSON.stringify(label)});
+      if (index < 0) continue;
+      const first = nodes.find(item => item.start + item.node.length > index);
+      const last = nodes.find(item => item.start + item.node.length >= index + ${label.length});
+      if (!first || !last) continue;
+      const range = document.createRange(); range.setStart(first.node, index - first.start); range.setEnd(last.node, index + ${label.length} - last.start);
+      const rect = range.getBoundingClientRect();
+      if (rect.width && rect.height) return { x: rect.x + rect.width * ${fraction}, y: rect.y + rect.height / 2 };
+    }
+    throw new Error('Native link click label not found');
+  })()` });
+  if (result.exceptionDetails || !result.result.value) throw new Error(`Cannot locate native link click target: ${JSON.stringify(result.exceptionDetails ?? result.result)}`);
+  const point = result.result.value;
+  if (control) await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Control', code: 'ControlLeft', windowsVirtualKeyCode: 17, modifiers: 2 });
+  try {
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point, modifiers: control ? 2 : 0 });
+    await cdp.command('Runtime.evaluate', { expression: 'new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))', awaitPromise: true });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', buttons: 1, clickCount: 1, modifiers: control ? 2 : 0 });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', buttons: 0, clickCount: 1, modifiers: control ? 2 : 0 });
+  } finally {
+    if (control) await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Control', code: 'ControlLeft', windowsVirtualKeyCode: 17 });
+  }
+}
+
+export async function clickEditorLine(cdp, lineNumber) {
+  const result = await cdp.command('Runtime.evaluate', { returnByValue: true, expression: `(() => {
+    const number = [...document.querySelectorAll('.monaco-editor .line-numbers')].find(node => node.textContent.trim() === ${JSON.stringify(String(lineNumber))});
+    const lines = document.querySelector('.monaco-editor .view-lines');
+    if (!number || !lines) throw new Error('Requested editor line is not visible');
+    const rect = number.getBoundingClientRect(); return { x: lines.getBoundingClientRect().left + 2, y: rect.y + rect.height / 2 };
+  })()` });
+  if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+  const point = result.result.value;
+  await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point, modifiers: 0 });
+  await cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', buttons: 1, clickCount: 1, modifiers: 0 });
+  await cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', buttons: 0, clickCount: 1, modifiers: 0 });
+}

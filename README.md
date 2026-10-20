@@ -2,7 +2,7 @@
 
 Phase 1 prototype of a VS Code extension for Markdown in JavaScript/TypeScript comments (including JSX/TSX). Standalone Markdown files are outside the initial scope.
 
-The prototype styles bold, italic, strikethrough, inline code, block-comment headings, Markdown horizontal rules, and unordered-list bullets. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions have unit, extension-host and screenshot coverage.
+The prototype renders inline formatting, headings, horizontal rules, lists, task boxes, blockquotes and links in code comments. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions have unit, extension-host and screenshot coverage.
 
 Block comments now display an open-right `┌─ / │ / └─` frame, with one column between the vertical stroke and Markdown content. Source comment delimiters/prefixes reappear during editing. See [frame behavior and manual checks](docs/comment-boxes.md), including mixed prefixes and compact inline blocks. Real extension-host checks cover these transitions; screenshot comparisons pass in the pinned Linux environment; the fenced-code screenshots and F5 behavior have been reviewed and approved.
 
@@ -65,3 +65,7 @@ Unordered-list bullets and their screenshots are approved; see [behavior and exa
 Ordered and task lists and their screenshots are approved; see [numbering, checkbox behavior and manual checks](docs/ordered-tasks.md).
 
 Blockquotes and their screenshots are approved; see [nested bars, contained Markdown and manual checks](docs/blockquotes.md).
+
+Links, autolinks and references are implemented for review, including **Markdown in Code: Open Link at Cursor**; see [behavior and manual checks](docs/links.md). Their screenshots await separate approval.
+
+Same-line comment links render too. Normal click edits; Ctrl+click (or the modifier shown in VS Code's hover) opens the link while preserving the source cursor and rendered comment.

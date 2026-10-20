@@ -21,6 +21,7 @@
     "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/extension.cjs --sourcemap",
     "test": "vitest run",
     "test:integration": "npm run build && esbuild tests/integration/index.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/integration/index.cjs && node scripts/run-integration.mjs",
+    "test:navigation": "npm run build && esbuild tests/navigation/index.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/navigation/index.cjs && node scripts/run-navigation.mjs",
     "test:visual:docker": "node scripts/run-visual-docker.mjs",
     "visual:capture:docker": "node scripts/run-visual-docker.mjs",
     "visual:accept": "node scripts/accept-visual.mjs",
@@ -57,6 +58,10 @@
   ],
   "contributes": {
     "commands": [
+      {
+        "command": "markdownInCode.openLink",
+        "title": "Markdown in Code: Open Link at Cursor"
+      },
       {
         "command": "markdownInCode.toggle",
         "title": "Markdown in Code: Toggle Rendering"

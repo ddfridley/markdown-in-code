@@ -414,6 +414,51 @@ export async function run(): Promise<void> {
       assert.ok(texts(editor, restored, 'commentText').join('').includes('Updated'));
       assert.equal(document.getText(), source.replace('Nested', 'Updated'));
     });
+    await test('link labels reveal source and explicit activation opens a local target', async () => {
+      const targetPath = join(workspace, 'link-target.ts');
+      await writeFile(targetPath, 'export const target = true;');
+      const source = 'const outside=1;\n/**\n * [**Local target**](./link-target.ts "Target")\n */';
+      const path = join(workspace, 'links.ts');
+      await writeFile(path, source);
+      const document = await vscode.workspace.openTextDocument(path);
+      let editor = await vscode.window.showTextDocument(document);
+      const rendered = await waitFor(editor, state => texts(editor, state, 'link').length === 1);
+      assert.deepEqual(texts(editor, rendered, 'link'), ['**Local target**']);
+      assert.deepEqual(texts(editor, rendered, 'strong'), ['Local target']);
+      const provided = await vscode.commands.executeCommand<vscode.DocumentLink[]>('vscode.executeLinkProvider', document.uri);
+      assert.ok(provided?.some(link => document.getText(link.range).trim() === '[**Local target**](./link-target.ts "Target")' && link.target?.scheme === 'command' && JSON.parse(decodeURIComponent(link.target.query))[1] === './link-target.ts'));
+      const nativeLink = provided!.find(link => document.getText(link.range).trim() === '[**Local target**](./link-target.ts "Target")')!;
+      assert.equal(JSON.parse(decodeURIComponent(nativeLink.target!.query))[0], document.uri.toString(), 'Command URI must preserve encoded Windows drive colons');
+      assert.equal(document.isDirty, false);
+      const label = source.indexOf('Local target');
+      assert.equal((await select(editor, [[label, label]])).ranges.length, 0);
+      await vscode.commands.executeCommand('markdownInCode.openLink');
+      assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), vscode.Uri.file(targetPath).toString());
+      editor = await vscode.window.showTextDocument(document);
+      await select(editor, [[0, 0]]);
+      await waitFor(editor, state => texts(editor, state, 'link').length === 1);
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => state.ranges.length === 0);
+      await vscode.commands.executeCommand('markdownInCode.toggle');
+      await waitFor(editor, state => texts(editor, state, 'link').length === 1);
+      assert.equal(document.getText(), source);
+    });
+    await test('same-line comment links render and provide native navigation', async () => {
+      const source = 'const outside=1; /* [Inline target](./link-target.ts) */';
+      const path = join(workspace, 'inline-links.ts');
+      await writeFile(path, source);
+      const document = await vscode.workspace.openTextDocument(path);
+      const editor = await vscode.window.showTextDocument(document);
+      const rendered = await waitFor(editor, state => texts(editor, state, 'link').length === 1);
+      assert.deepEqual(texts(editor, rendered, 'link'), ['Inline target']);
+      assert.equal(rendered.boxes.length, 0);
+      const provided = await vscode.commands.executeCommand<vscode.DocumentLink[]>('vscode.executeLinkProvider', document.uri);
+      assert.ok(provided?.some(link => document.getText(link.range).trim() === '[Inline target](./link-target.ts)' && link.target?.scheme === 'command' && JSON.parse(decodeURIComponent(link.target.query))[1] === './link-target.ts'));
+      const label = source.indexOf('Inline target');
+      assert.equal((await select(editor, [[label, label]])).ranges.length, 0);
+      assert.equal(document.getText(), source);
+      assert.equal(document.isDirty, false);
+    });
     console.log(`Integration checks: ${passed.length} passed (VS Code ${vscode.version})`);
   } finally {
     // Fixtures are in the runner's isolated workspace; leave logs for diagnosis.

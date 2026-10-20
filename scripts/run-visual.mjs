@@ -4,7 +4,7 @@ import { watch } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:net';
-import { connect, captureEditor } from './visual/cdp.mjs';
+import { connect, captureEditor, controlClickLink } from './visual/cdp.mjs';
 import { compareFiles } from './visual/compare.mjs';
 import { verifyAccepted, sha256, writeReview } from './visual/review.mjs';
 
@@ -15,7 +15,7 @@ if (process.platform !== 'linux' || process.arch !== 'x64' || process.env.MIC_VI
 if (process.argv.includes('--update')) throw new Error('Automatic baseline updates are disabled. Capture, review index.html, then use visual:accept interactively.');
 const mutation = process.argv.find(argument => argument.startsWith('--mutation='))?.slice(11);
 if (mutation && !['missing-border', 'offset', 'heading-size'].includes(mutation)) throw new Error('Unknown visual mutation');
-const names = new Set(['block-light', 'block-selected-light', 'block-narrow-light', 'block-dark', 'standalone-light', 'horizontal-rules-light', 'fenced-light', 'fenced-sidebar-light', 'fenced-minimap-light', 'fenced-dark', 'headings-light', 'headings-narrow-light', 'headings-tight-light', 'headings-wrapped-light', 'headings-dark', 'unordered-lists-light', 'unordered-lists-dark', 'ordered-tasks-light', 'ordered-tasks-dark', 'blockquotes-light', 'blockquotes-dark']);
+const names = new Set(['block-light', 'block-selected-light', 'block-narrow-light', 'block-dark', 'standalone-light', 'horizontal-rules-light', 'fenced-light', 'fenced-sidebar-light', 'fenced-minimap-light', 'fenced-dark', 'headings-light', 'headings-narrow-light', 'headings-tight-light', 'headings-wrapped-light', 'headings-dark', 'unordered-lists-light', 'unordered-lists-dark', 'ordered-tasks-light', 'ordered-tasks-dark', 'blockquotes-light', 'blockquotes-dark', 'links-light', 'links-dark']);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const runId = `${Date.now()}`;
 const artifact = mutation ? resolve(root, '.vscode-test/visual-artifacts', `${runId}-mutation`) : resolve(root, 'tests/visual/preliminary', runId);
@@ -58,6 +58,14 @@ async function scan() {
         const report = await compareFiles(expected, actual, join(artifact, `${request.name}.diff.png`), join(artifact, `${request.name}.expected.png`));
         reports.push({ name: request.name, ...report, candidateSha256: sha256(await readFile(actual)), acceptedSha256: accepted.manifest.images[request.name] ?? null });
         console.log(`${report.pass ? 'PASS' : 'FAIL'} ${request.name}: ${report.reason}`);
+        if (request.controlClick) {
+          if (request.name !== 'links-dark' || request.controlClick !== 'Local fixture') throw new Error('Unexpected native link interaction');
+          await controlClickLink(cdp, request.controlClick);
+        }
+        if (request.plainClick) {
+          if (request.name !== 'links-light' || request.plainClick !== 'Local fixture') throw new Error('Unexpected plain link interaction');
+          await controlClickLink(cdp, request.plainClick, false);
+        }
         await writeFile(join(bridge, 'acks', file), '{}');
       } catch (error) {
         reports.push({ name: request.name, pass: false, reason: String(error) });

@@ -23,12 +23,17 @@ jobs:
       - name: VS Code integration (Windows/macOS)
         if: runner.os != 'Linux'
         run: npm run test:integration
+      - name: Windows native link mouse regression
+        if: runner.os == 'Windows'
+        run: npm run test:navigation
       - name: Retain VS Code logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: vscode-logs-${{ matrix.os }}
-          path: .vscode-test/sessions/**/user-data/logs/**
+          path: |
+            .vscode-test/sessions/**/user-data/logs/**
+            .vscode-test/navigation/**/user-data/logs/**
           if-no-files-found: ignore
           retention-days: 7
   visual:
