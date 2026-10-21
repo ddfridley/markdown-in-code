@@ -1,6 +1,6 @@
 # Testing
 
-Current table-slice verification: 110 unit tests, typecheck/build, 24 real VS Code integration checks and the 33-activation native link suite pass. The screenshot suite has 29 cases: all 29 images are approved, including the long, wrapped and horizontally scrolled plan table. Table tests cover LF/CRLF mapping, alignment, omitted outer pipes, inline/link composition, escaped pipes, empty cells, source reveal, edits, toggle and explicit layout fallbacks. See [table review steps](tables.md). Historical counts below describe earlier slices.
+Current verification: 110 unit tests, typecheck/build, 26 real VS Code integration checks and the 33-activation native link suite pass. Escape integration checks cover unchanged cursor/viewport, edit and movement release, toggling, selections, language changes and split isolation. Real keyboard checks pass on VS Code 1.100.3 and installed 1.142.0 for Find dismissal, Escape rendering and click/arrow release; see [Escape checks](escape.md). The screenshot suite has 29 cases: all 29 images are approved, including the long, wrapped and horizontally scrolled plan table. Table tests cover LF/CRLF mapping, alignment, omitted outer pipes, inline/link composition, escaped pipes, empty cells, source reveal, edits, toggle and explicit layout fallbacks. See [table review steps](tables.md). Historical counts below describe earlier slices.
 
 Select the version in `.nvmrc` through NVS before running npm commands. In this Windows setup, open Git Bash at the repository root and run:
 

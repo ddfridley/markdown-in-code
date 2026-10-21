@@ -7,6 +7,7 @@ import { headingLayout } from './headings';
 import { commentText } from './comment-text';
 import { parseComments } from './markdown';
 import { resolveLink } from './links';
+import { extractComments } from './comments';
 
 const languages = new Set(['javascript', 'typescript', 'javascriptreact', 'typescriptreact']);
 function linkHitRange(document: vscode.TextDocument, span: { start: number; end: number }): vscode.Range {
@@ -64,6 +65,8 @@ export function activate(context: vscode.ExtensionContext) {
   const linkClicks = new WeakMap<vscode.TextEditor, { selections: readonly vscode.Selection[]; version: number; offset: number; destination: string }>();
   const pendingLinks = new Map<vscode.TextEditor, { selections: readonly vscode.Selection[]; version: number; timer: ReturnType<typeof setTimeout> }>();
   const navigationPins = new Map<vscode.TextEditor, { document: vscode.TextDocument; column: vscode.ViewColumn | undefined; version: number; start: number; end: number; origin: readonly vscode.Selection[]; activation: vscode.Range; gestureUntil: number; focusUntil: number }>();
+  const escapePins = new Map<vscode.TextEditor, { document: vscode.TextDocument; version: number; start: number; end: number; selection: vscode.Selection }>();
+  context.subscriptions.push({ dispose: () => { escapePins.clear(); void vscode.commands.executeCommand('setContext', 'markdownInCode.canRenderComment', false); } });
   context.subscriptions.push({ dispose: () => { for (const pending of pendingLinks.values()) clearTimeout(pending.timer); pendingLinks.clear(); navigationPins.clear(); } });
   let sequence = 0;
   const options: Record<Exclude<Style, CodeStyle | 'heading' | 'orderedMarker' | 'taskMarker' | 'quoteMarker' | 'link' | 'tableGap' | 'tableHeader' | 'tableRow' | 'tableRowHeader'>, vscode.DecorationRenderOptions> = {
@@ -133,10 +136,22 @@ export function activate(context: vscode.ExtensionContext) {
     types.set(style, type); context.subscriptions.push(type);
   }
   const session = new RenderingSession();
+  function caretComment(editor: vscode.TextEditor) {
+    if (!session.isEnabled || !languages.has(editor.document.languageId) || editor.selections.length !== 1 || !editor.selection.isEmpty) return;
+    const offset = editor.document.offsetAt(editor.selection.active);
+    return extractComments(editor.document.getText(), editor.document.fileName).find(region => offset >= region.start && offset <= region.end);
+  }
+  function updateEscapeContext() {
+    const editor = vscode.window.activeTextEditor;
+    void vscode.commands.executeCommand('setContext', 'markdownInCode.canRenderComment',
+      !!editor && !escapePins.has(editor) && !navigationPins.has(editor) && !!caretComment(editor));
+  }
   function update(editor: vscode.TextEditor) {
     // Rendering can run for theme/focus/options changes before the mouse event
     // reaches us. Those updates must not overwrite the pre-click cursor.
     const document = editor.document;
+    const escaped = escapePins.get(editor);
+    if (escaped && (escaped.document !== document || escaped.version !== document.version)) escapePins.delete(editor);
     // A returning tab can have a new editor wrapper. Transfer its presentation
     // within the same group only, so another split keeps independent editing.
     if (!navigationPins.has(editor)) {
@@ -153,6 +168,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
     const pin = navigationPins.get(editor);
     if (pin && (pin.document !== document || pin.version !== document.version)) navigationPins.delete(editor);
+    if (editor === vscode.window.activeTextEditor) updateEscapeContext();
     if (selectionDocuments.get(editor) !== document) {
       selectionDocuments.set(editor, document);
       lastSelections.set(editor, [...editor.selections]);
@@ -178,6 +194,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
     if (!languages.has(document.languageId)) {
       navigationPins.delete(editor);
+      escapePins.delete(editor);
       session.close(key);
       for (const type of types.values()) editor.setDecorations(type, []);
       for (const group of headingGroups.values()) for (const type of group) editor.setDecorations(type, []);
@@ -189,7 +206,7 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     // Selecting/clicking a comment reveals its complete source for editing.
-    const { decorations: markdown, boxes } = session.presentation(key, document.version, document.fileName, () => document.getText(), active, Number(editor.options.tabSize) || 4, navigationPins.get(editor));
+    const { decorations: markdown, boxes } = session.presentation(key, document.version, document.fileName, () => document.getText(), active, Number(editor.options.tabSize) || 4, escapePins.get(editor) ?? navigationPins.get(editor));
     const visible = [...markdown, ...commentText(boxes, markdown)];
     for (const [style, type] of types) {
       const ranges = visible.filter(decoration => decoration.style === style).map(decoration => {
@@ -354,16 +371,41 @@ export function activate(context: vscode.ExtensionContext) {
       if (!target) { await vscode.window.showInformationMessage('This link target cannot be opened by Markdown in Code.'); return; }
       await openTarget(target, { editor, start: link.start });
     }),
-    vscode.commands.registerCommand('markdownInCode.toggle', () => { navigationPins.clear(); session.toggle(); updateVisible(); }),
+    vscode.commands.registerCommand('markdownInCode.renderComment', () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) return;
+      const region = caretComment(editor);
+      if (!region) return;
+      const pending = pendingLinks.get(editor);
+      if (pending) { clearTimeout(pending.timer); pendingLinks.delete(editor); }
+      linkClicks.delete(editor);
+      navigationPins.delete(editor);
+      escapePins.set(editor, { document: editor.document, version: editor.document.version, start: region.start, end: region.end, selection: editor.selection });
+      lastSelections.set(editor, [...editor.selections]);
+      update(editor);
+    }),
+    vscode.commands.registerCommand('markdownInCode.toggle', () => { escapePins.clear(); navigationPins.clear(); session.toggle(); updateVisible(); }),
+    vscode.window.onDidChangeActiveTextEditor(updateEscapeContext),
     vscode.window.onDidChangeWindowState(state => {
       for (const [editor, pin] of navigationPins) {
         if (state.focused) pin.focusUntil = Date.now() + 200;
         update(editor);
       }
     }),
-    vscode.window.onDidChangeVisibleTextEditors(updateVisible),
+    vscode.window.onDidChangeVisibleTextEditors(editors => {
+      for (const editor of escapePins.keys()) if (!editors.includes(editor)) escapePins.delete(editor);
+      updateVisible(); updateEscapeContext();
+    }),
     vscode.window.onDidChangeTextEditorSelection(event => {
       const editor = event.textEditor;
+      const escaped = escapePins.get(editor);
+      if (escaped) {
+        if (escaped.document === editor.document && escaped.version === editor.document.version && editor.selections.length === 1 &&
+            editor.selection.isEqual(escaped.selection) && event.kind !== vscode.TextEditorSelectionChangeKind.Mouse && event.kind !== vscode.TextEditorSelectionChangeKind.Keyboard) {
+          update(editor); return;
+        }
+        escapePins.delete(editor);
+      }
       const pin = navigationPins.get(editor);
       if (pin && pin.document === editor.document && pin.version === editor.document.version) {
         const atOrigin = editor.selections.length === pin.origin.length && editor.selections.every((value, index) => value.isEqual(pin.origin[index]));
@@ -402,11 +444,13 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration(event => { if (event.affectsConfiguration('editor.fontSize') || event.affectsConfiguration('editor.lineHeight') || event.affectsConfiguration('editor.wordWrap')) updateVisible(); }),
     vscode.workspace.onDidOpenTextDocument(updateVisible),
     vscode.workspace.onDidChangeTextDocument(event => {
+      for (const [editor, pin] of escapePins) if (pin.document === event.document) escapePins.delete(editor);
       if (hintEditor?.document === event.document) clearOpenedHint();
       for (const [editor, pin] of navigationPins) if (pin.document === event.document) navigationPins.delete(editor);
       for (const editor of vscode.window.visibleTextEditors) if (editor.document === event.document) update(editor);
     }),
     vscode.workspace.onDidCloseTextDocument(document => {
+      for (const [editor, pin] of escapePins) if (pin.document === document) escapePins.delete(editor);
       session.close(document.uri.toString());
       for (const [editor, pin] of navigationPins) if (pin.document === document) navigationPins.delete(editor);
       for (const [editor, pending] of pendingLinks) if (editor.document === document) { clearTimeout(pending.timer); pendingLinks.delete(editor); }

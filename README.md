@@ -13,6 +13,10 @@ Open the printed URL (normally `http://127.0.0.1:3000/`); Ctrl+C stops the serve
 
 The prototype renders inline formatting, headings, horizontal rules, lists, task boxes, blockquotes and links in code comments. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions have unit, extension-host and screenshot coverage.
 
+Press **Escape** with one caret inside a revealed comment to render it without moving the cursor or scrolling to its end. Editor popups and selections keep their usual Escape actions first. Clicking, moving or typing resumes source editing. See [Escape behavior and manual checks](docs/escape.md).
+
+Escape only restores rendering; it does not toggle back to editing. A repeat click at the identical caret position may leave the comment rendered. Click a different column on the same line or press an arrow key to edit again.
+
 The table slice adds aligned GFM columns, bold headers and header rules while retaining inline formatting and click-to-edit. See [table behavior, limits and F5 checks](docs/tables.md). Table screenshots and the preceding link slice have human approval.
 
 Block comments now display an open-right `┌─ / │ / └─` frame, with one column between the vertical stroke and Markdown content. Source comment delimiters/prefixes reappear during editing. See [frame behavior and manual checks](docs/comment-boxes.md), including mixed prefixes and compact inline blocks. Real extension-host checks cover these transitions; screenshot comparisons pass in the pinned Linux environment; the fenced-code screenshots and F5 behavior have been reviewed and approved.

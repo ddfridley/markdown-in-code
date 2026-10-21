@@ -65,6 +65,17 @@
       {
         "command": "markdownInCode.toggle",
         "title": "Markdown in Code: Toggle Rendering"
+      },
+      {
+        "command": "markdownInCode.renderComment",
+        "title": "Markdown in Code: Render Current Comment"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "markdownInCode.renderComment",
+        "key": "escape",
+        "when": "editorTextFocus && markdownInCode.canRenderComment && !editorHasSelection && !editorHasMultipleSelections && !suggestWidgetVisible && !inlineSuggestionVisible && !findWidgetVisible && !parameterHintsVisible && !renameInputVisible && !codeActionMenuVisible && !inSnippetMode && !inReferenceSearchEditor && !editorHoverVisible && !notificationCenterVisible && !notificationToastsVisible && !isComposing"
       }
     ]
   }

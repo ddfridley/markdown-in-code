@@ -1,6 +1,6 @@
 # Comment rendering behavior
 
-This is the Phase 2 contract for the initial extension. Pure parser and rendering-session tests enforce the rules, Phase 3 checks real VS Code event wiring and decoration updates, and Phase 4 now compares twenty-three pinned Linux editor captures. See `docs/visual-testing.md` for coverage, limitations and the baseline review gallery.
+This is the Phase 2 contract for the initial extension. Pure parser and rendering-session tests enforce the rules, Phase 3 checks real VS Code event wiring and decoration updates, and Phase 4 now compares twenty-nine pinned Linux editor captures. See `docs/visual-testing.md` for coverage, limitations and the baseline review gallery.
 
 ## Scope and syntax
 
@@ -26,7 +26,8 @@ This is the Phase 2 contract for the initial extension. Pure parser and renderin
 | Fenced code | Opposite light/dark background, simplified JS/TS colors and plain-code fallback. Replace fence rows with code-colored bars and expand the opening language label. No nested Markdown styling. See [fenced-code behavior](fenced-code.md). |
 | Indented code | Keep syntax and content raw, without nested Markdown styling. |
 | Unterminated source comments | Follow the TypeScript compiler's recovered region, including EOF. Never invent nested block-comment boundaries. |
-| Standalone `.md`, Escape | No rendering registration for `.md`; no Escape binding or Escape-driven mode change. |
+| Standalone `.md` | No rendering registration; this extension does not handle its Escape key. |
+| Escape in a revealed comment | With one empty caret and rendering enabled, explicitly render the current comment without moving the caret or requesting a scroll. Popups/selections keep their normal Escape actions first. Movement/clicks, edits, toggle, language changes and hiding the editor release protection. Other splits remain independent. See [Escape behavior](escape.md). |
 
 ## Editing and selections
 

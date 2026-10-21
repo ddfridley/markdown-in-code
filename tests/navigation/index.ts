@@ -32,9 +32,9 @@ export async function run() {
     ['Grouped link', 'https://example.com/group'], ['Same-line link', 'https://example.com/inline']
   ];
   let requestId = 0;
-  async function click(label: string, control: boolean, fraction = 0.5, line?: number) {
+  async function click(label: string, control: boolean, fraction = 0.5, line?: number, key?: string) {
     const path = join(process.env.MIC_NAVIGATION_BRIDGE!, 'acks', `${++requestId}.json`);
-    await writeFile(join(process.env.MIC_NAVIGATION_BRIDGE!, 'requests', `${requestId}.json`), JSON.stringify({ label, control, fraction, line }));
+    await writeFile(join(process.env.MIC_NAVIGATION_BRIDGE!, 'requests', `${requestId}.json`), JSON.stringify({ label, control, fraction, line, key }));
     await until(async () => { try { const result = JSON.parse(await readFile(path, 'utf8')); if (result.error) throw new Error(result.error); return true; } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT' || error instanceof SyntaxError) return false; throw error; } }, 'mouse acknowledgement');
   }
   if (process.env.MIC_NAVIGATION_EXTERNAL === '1') {
@@ -129,5 +129,28 @@ export async function run() {
   await until(() => api.snapshot(editor)!.version === document.version && !api.snapshot(editor)!.ranges.some(value => value.style === 'link' && value.start === document.getText().indexOf('Edited label')), 'editing clears navigation presentation');
   assert.equal(document.getText(), original.replace('Readable label', 'Edited label'));
   console.log('PASS explicit navigation and editing release navigation presentation');
+  await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
+  await vscode.commands.executeCommand('notifications.clearAll');
+  await vscode.workspace.getConfiguration('editor').update('find.seedSearchStringFromSelection', 'never', vscode.ConfigurationTarget.Global);
+  await vscode.commands.executeCommand('actions.find');
+  await new Promise(resolve => setTimeout(resolve, 300));
+  await click('', false, 0.5, undefined, 'Escape');
+  await new Promise(resolve => setTimeout(resolve, 300));
+  assert.ok(!api.snapshot(editor)!.ranges.some(value => value.style === 'link' && value.start === document.getText().indexOf('Edited label')), 'First Escape must close Find without rendering the comment');
+  const escapeCursor = editor.selection;
+  assert.ok(escapeCursor.isEmpty, `Find setup must leave an empty caret: ${JSON.stringify(escapeCursor)}`);
+  const escapeTop = editor.visibleRanges[0].start.line;
+  await click('', false, 0.5, undefined, 'Escape');
+  await until(() => !!api.snapshot(editor)!.ranges.some(value => value.style === 'link' && value.start === document.getText().indexOf('Edited label')), 'physical Escape renders comment');
+  assert.ok(editor.selection.isEqual(escapeCursor));
+  assert.equal(editor.visibleRanges[0].start.line, escapeTop);
+  await click('Edited label', false);
+  await until(() => !api.snapshot(editor)!.ranges.some(value => value.style === 'link' && value.start === document.getText().indexOf('Edited label')), 'ordinary click releases Escape presentation');
+  await click('', false, 0.5, undefined, 'Escape');
+  await until(() => !!api.snapshot(editor)!.ranges.some(value => value.style === 'link' && value.start === document.getText().indexOf('Edited label')), 'second physical Escape renders comment');
+  await click('', false, 0.5, undefined, 'ArrowRight');
+  await until(() => !api.snapshot(editor)!.ranges.some(value => value.style === 'link' && value.start === document.getText().indexOf('Edited label')), 'physical arrow resumes source editing');
+  assert.equal(document.getText(), original.replace('Readable label', 'Edited label'));
+  console.log('PASS physical Escape respects Find, preserves cursor/viewport, and releases on click/arrow');
   console.log(`PASS ordinary click reveals source without opening; native mouse checks passed on VS Code ${vscode.version}`);
 }

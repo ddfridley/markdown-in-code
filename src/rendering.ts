@@ -17,6 +17,7 @@ export class RenderingSession {
   private readonly cache = new Map<string, { version: number; fileName: string; decorations: Decoration[]; source: string; regions: CommentRegion[]; boxes: BoxLine[]; tabSize: number }>();
 
   toggle(): void { this.enabled = !this.enabled; }
+  get isEnabled(): boolean { return this.enabled; }
   close(uri: string): void { this.cache.delete(uri); }
 
   decorations(uri: string, version: number, fileName: string, readText: () => string, selections: Span[]): Decoration[] {

@@ -29,7 +29,12 @@ async function scan() {
     queue = queue.then(async () => {
       try {
         cdp ??= await connect(port);
-        if (request.line === 26) await clickEditorLine(cdp, request.line);
+        if (request.key) {
+          const keyCode = { Escape: 27, ArrowRight: 39 }[request.key];
+          if (!keyCode) throw new Error('Unexpected test key');
+          await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key: request.key, code: request.key, windowsVirtualKeyCode: keyCode });
+          await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key: request.key, code: request.key, windowsVirtualKeyCode: keyCode });
+        } else if (request.line === 26) await clickEditorLine(cdp, request.line);
         else await controlClickLink(cdp, request.label, request.control, request.fraction ?? 0.5);
         await writeFile(join(bridge, 'acks', name), '{}');
       } catch (error) { await writeFile(join(bridge, 'acks', name), JSON.stringify({ error: String(error) })); }
