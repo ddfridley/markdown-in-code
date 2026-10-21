@@ -2,6 +2,15 @@
 
 Phase 1 prototype of a VS Code extension for Markdown in JavaScript/TypeScript comments (including JSX/TSX). Standalone Markdown files are outside the initial scope.
 
+Open [demo.ts](demo.ts) in the F5 development window for a working-feature tour, with layered Node HTTP functions documented using the [md-comments function template](../md-comments/README.md#function-documentation-template). Put the cursor outside comments to render them. To run the server with the repository's Node 24 version, use Git Bash:
+
+```sh
+source ./.bashrc
+node demo.ts
+```
+
+Open the printed URL (normally `http://127.0.0.1:3000/`); Ctrl+C stops the server. Optional `HOST`, `PORT` and `GREETING` environment variables configure it. `PORT=0 node demo.ts` requests an available port. The demo needs no extra dependencies and is included in the normal TypeScript check.
+
 The prototype renders inline formatting, headings, horizontal rules, lists, task boxes, blockquotes and links in code comments. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions have unit, extension-host and screenshot coverage.
 
 The table slice adds aligned GFM columns, bold headers and header rules while retaining inline formatting and click-to-edit. See [table behavior, limits and F5 checks](docs/tables.md). Table screenshots and the preceding link slice have human approval.
