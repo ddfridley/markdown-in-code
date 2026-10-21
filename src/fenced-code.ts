@@ -12,19 +12,74 @@ const LANGUAGE_NAMES: Record<string, string> = {
   rb: 'Ruby', ruby: 'Ruby', rs: 'Rust', rust: 'Rust', go: 'Go', sql: 'SQL',
   yaml: 'YAML', yml: 'YAML', md: 'Markdown', markdown: 'Markdown'
 };
+/**
+ * ## codeLanguageName(language) ⇒ {string}
+ * Expand familiar fence aliases for readable labels without claiming syntax highlighting exists for every named language.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `language` **{string | null | undefined}** - Markdown fence info language token.
+ *
+ * ## Returns
+ * **{string}** - Known display name, original unknown token, or an empty label.
+ *
+ * ## Implementation Details
+ * Label lookup is intentionally broader than the JS/TS tokenizer; unknown languages still get a plain-code presentation.
+ */
 export const codeLanguageName = (language?: string | null) => language ? LANGUAGE_NAMES[language.toLowerCase()] ?? language : '';
 export const CODE_PALETTES = {
   dark: { background: '#1e1e1e', foreground: '#d4d4d4', keyword: '#569cd6', string: '#ce9178', number: '#b5cea8', comment: '#86b86b' },
   light: { background: '#f5f5f5', foreground: '#24292f', keyword: '#0000ff', string: '#a31515', number: '#087045', comment: '#008000' }
 } as const;
 
-/** Fenced code only; indented Markdown code remains outside this feature slice. */
+/**
+ * ## fencedCode(source, region, span, language) ⇒ {Decoration[]}
+ * Build contrasting code bands and fence labels while preventing Markdown syntax inside code from being interpreted.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `source` **{string}** - Original document used to protect the closing comment-frame row.
+ * - `region` **{CommentRegion}** - Original or quote-normalized mapping for this fence.
+ * - `span` **{Span}** - Fenced-code range in normalized Markdown offsets.
+ * - `language` **{string | null | undefined}** - Fence language; only JS/TS aliases receive lexical token colors.
+ *
+ * ## Returns
+ * **{Decoration[]}** - Background, disjoint foreground/token ranges and opening/closing fence bars in source coordinates.
+ *
+ * ## Implementation Details
+ * A lightweight scanner avoids language-service dependencies. Plain foreground ranges are subtracted around tokens/fences because Monaco overlap ordering cannot be trusted for color precedence. Empty rows need background anchors even without text.
+ *
+ * ## Agent Notes
+ * Indented Markdown code is intentionally excluded. Keep frame-closing rows, quoted fences, unknown languages and literal Markdown covered independently.
+ */
 export function fencedCode(source: string, region: CommentRegion, span: Span, language: string | null | undefined): Decoration[] {
   if (region.kind === 'line' || region.segments.length < 2) return [];
   const text = region.markdown.slice(span.start, span.end);
   const opening = /^ {0,3}(`{3,}|~{3,})[^\n]*/.exec(text);
   if (!opening) return [];
   const result: Decoration[] = [];
+  /**
+   * ## add(style, start, end) ⇒ {void}
+   * Route fence/token ranges through the same source mapper as Markdown so removed prefixes cannot acquire code colors.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * - `style` **{CodeStyle}** - Semantic code decoration kind.
+   * - `start` **{number}** - Inclusive normalized Markdown offset.
+   * - `end` **{number}** - Exclusive normalized Markdown offset.
+   *
+   * ## Returns
+   * **{void}** - Appends mapped decorations to the enclosing result.
+   *
+   * ## Implementation Details
+   * Direct source arithmetic across rows would include quote or comment prefixes.
+   */
   function add(style: CodeStyle, start: number, end: number) {
     result.push(...mapRange(region, { start, end }).map(range => ({ ...range, style, region })));
   }

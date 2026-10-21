@@ -8,7 +8,27 @@ interface Node {
   children?: Node[];
 }
 
-/** Row-preserving table layout. Unsupported glyph/tab widths keep their source layout. */
+/**
+ * ## tableDecorations(node, region, inline) ⇒ {Decoration[]}
+ * Align GFM tables within source-row constraints and fall back rather than inventing unreliable glyph widths or huge attachments.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `node` **{Node}** - Parser-recognized table, including column alignments and rows.
+ * - `region` **{CommentRegion}** - Framed comment and source mapping.
+ * - `inline` **{Decoration[]}** - Existing semantic spans; hidden markers determine rendered cell widths.
+ *
+ * ## Returns
+ * **{Decoration[]}** - Cell gap/header decorations or wide plain-row attachments; unsupported tables return none.
+ *
+ * ## Implementation Details
+ * Rich cells keep their inline decorations. Wide plain tables use one measured attachment per row so text stays unwrapped and contributes horizontal scroll width; source-based wrapped continuation space remains blank. The 4096-column cap bounds allocation and leaves oversized tables editable.
+ *
+ * ## Agent Notes
+ * Do not silently expand support for tabs, wide/combining glyphs, emoji or irregular rows without measuring layout. Keep 4096/4097 boundaries, overflow recovery and actual scrollbar dragging tested. Never convert source text into padded table text.
+ */
 export function tableDecorations(node: Node, region: CommentRegion, inline: Decoration[]): Decoration[] {
   if (node.type !== 'table' || !node.children?.length || !node.align?.length) return [];
   if (!(region.kind === 'lineBlock' || (region.kind === 'block' && region.segments.length > 1))) return [];
@@ -49,6 +69,27 @@ export function tableDecorations(node: Node, region: CommentRegion, inline: Deco
   // Keep exceptionally wide tables literal rather than allocating huge attachments.
   if (widths.reduce((sum, width) => sum + width + 3, 1) > 4096) return [];
   const result: Decoration[] = [];
+  /**
+   * ## gap(start, end, label) ⇒ {void}
+   * Replace structural cell gaps while allowing missing outer pipes and empty cells to have zero-width source anchors.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * - `start` **{number}** - Inclusive normalized Markdown offset.
+   * - `end` **{number}** - Exclusive offset; may equal start for an attachment.
+   * - `label` **{string}** - Border/padding text displayed in place of that source gap.
+   *
+   * ## Returns
+   * **{void}** - Appends a source-mapped table gap if a segment can host it.
+   *
+   * ## Implementation Details
+   * The general range mapper deliberately rejects empty spans. This local anchor path keeps that mapper strict while supporting tables without outer pipe characters.
+   *
+   * ## Agent Notes
+   * Zero-width attachments must survive the parser final pass; do not drop them as empty text ranges.
+   */
   function gap(start: number, end: number, label: string) {
     const span = start < end ? mapRange(region, { start, end })[0] : undefined;
     const segment = region.segments.find(value => start >= value.markdownStart && start <= value.markdownEnd);

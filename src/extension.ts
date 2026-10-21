@@ -10,6 +10,26 @@ import { resolveLink } from './links';
 import { extractComments } from './comments';
 
 const languages = new Set(['javascript', 'typescript', 'javascriptreact', 'typescriptreact']);
+/**
+ * ## linkHitRange(document, span) ⇒ {vscode.Range}
+ * Give native links the same hit margin used by click detection so a boundary glyph cannot bypass our activation path.
+ *
+ * **Kind:** function
+ * **Access:** private
+ *
+ * ## Parameters
+ * - `document` **{vscode.TextDocument}** - Source document for offset/line conversion.
+ * - `span` **{Span}** - Full source activation syntax, not merely the visible label.
+ *
+ * ## Returns
+ * **{vscode.Range}** - Range expanded by one neighboring column where the source row permits it.
+ *
+ * ## Implementation Details
+ * After hidden Markdown syntax collapses, Monaco can map the first visible glyph to the preceding source column. Expansion never crosses a source-row boundary.
+ *
+ * ## Agent Notes
+ * Use this helper in both the document-link provider and selection detection. The small native underline extension is a documented, reviewed tradeoff.
+ */
 function linkHitRange(document: vscode.TextDocument, span: { start: number; end: number }): vscode.Range {
   const start = document.positionAt(span.start);
   const end = document.positionAt(span.end);
@@ -17,6 +37,25 @@ function linkHitRange(document: vscode.TextDocument, span: { start: number; end:
     end.character < document.lineAt(end.line).text.length ? end.translate(0, 1) : end);
 }
 
+/**
+ * ## activate(context) ⇒ {TestApi | undefined}
+ * Connect pure comment presentation to VS Code without confusing document-wide caches with editor-local interaction state.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `context` **{vscode.ExtensionContext}** - Activation mode and owner of commands, listeners, timers and decoration disposables.
+ *
+ * ## Returns
+ * **{TestApi | undefined}** - Narrow observation API in test mode; no API in normal development/installed mode.
+ *
+ * ## Implementation Details
+ * Native selection events do not expose modifier keys or every same-position click. Click history, pending reveal timers, navigation pins and Escape pins therefore represent different lifetimes and intentions. Theme/layout callbacks must not replace pre-click history.
+ *
+ * ## Agent Notes
+ * Do not merge these states merely because their fields overlap. CSS-based attachment geometry depends on Monaco behavior and decoration registration order; prove changes with real input and pinned screenshots, not snapshots alone. Accepted baselines require human approval.
+ */
 export function activate(context: vscode.ExtensionContext) {
   const testing = context.extensionMode === vscode.ExtensionMode.Test;
   const openedLinks: string[] = [];
@@ -32,6 +71,22 @@ export function activate(context: vscode.ExtensionContext) {
   } });
   let hintTimer: ReturnType<typeof setTimeout> | undefined;
   let hintEditor: vscode.TextEditor | undefined;
+  /**
+   * ## clearOpenedHint() ⇒ {void}
+   * Make transient open feedback replaceable and disposable without leaving an old timer able to clear a newer hint.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * None.
+   *
+   * ## Returns
+   * **{void}** - Cancels the current timer and removes its editor decoration.
+   *
+   * ## Implementation Details
+   * A successful new open calls this before installing feedback; source edits and extension disposal also use the same cleanup.
+   */
   function clearOpenedHint() {
     if (hintTimer) clearTimeout(hintTimer);
     hintTimer = undefined;
@@ -39,6 +94,26 @@ export function activate(context: vscode.ExtensionContext) {
     hintEditor = undefined;
   }
   context.subscriptions.push(openedHint, { dispose: clearOpenedHint });
+  /**
+   * ## openTarget(target, source) ⇒ {Promise<void>}
+   * Open an explicitly activated destination and show success feedback only when the external opener reports success.
+   *
+   * **Kind:** async function
+   * **Access:** private
+   *
+   * ## Parameters
+   * - `target` **{{kind: "external" | "editor", uri: string}}** - Resolved target from the pure destination policy.
+   * - `source` **{{editor: vscode.TextEditor, start: number}}** - Source editor and label offset anchoring the two-second confirmation.
+   *
+   * ## Returns
+   * **{Promise<void>}** - Completes after the opening request; opener/command errors propagate. Canceled external opens show no success hint.
+   *
+   * ## Implementation Details
+   * Version/closed-document checks prevent a delayed opener from attaching feedback to changed text. The browser may remain behind Code, so feedback confirms activation without trying to steal OS focus.
+   *
+   * ## Agent Notes
+   * Captured external targets in test mode are not real browser/mail opens. Windows foreground behavior and trusted-domain prompts belong to VS Code/OS settings; do not add shell focus tricks.
+   */
   async function openTarget(target: { kind: 'external' | 'editor'; uri: string }, source: { editor: vscode.TextEditor; start: number }) {
     const sourceVersion = source.editor.document.version;
     if (testing) openedLinks.push(target.uri);
@@ -136,16 +211,70 @@ export function activate(context: vscode.ExtensionContext) {
     types.set(style, type); context.subscriptions.push(type);
   }
   const session = new RenderingSession();
+  /**
+   * ## caretComment(editor) ⇒ {CommentRegion | undefined}
+   * Keep Escape eligibility tied to an enabled renderer and one source caret, leaving selection and multicursor cancellation to the editor.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * - `editor` **{vscode.TextEditor}** - Editor whose current source selection is being inspected.
+   *
+   * ## Returns
+   * **{CommentRegion | undefined}** - Comment containing the caret, or none for disabled/unsupported/selection states.
+   *
+   * ## Implementation Details
+   * Compiler-derived bounds are shared with rendering; a separate delimiter regex would disagree on strings, incomplete comments and grouped lines.
+   */
   function caretComment(editor: vscode.TextEditor) {
     if (!session.isEnabled || !languages.has(editor.document.languageId) || editor.selections.length !== 1 || !editor.selection.isEmpty) return;
     const offset = editor.document.offsetAt(editor.selection.active);
     return extractComments(editor.document.getText(), editor.document.fileName).find(region => offset >= region.start && offset <= region.end);
   }
+  /**
+   * ## updateEscapeContext() ⇒ {void}
+   * Scope the Escape keybinding to a revealed active comment instead of consuming Escape throughout VS Code.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * None.
+   *
+   * ## Returns
+   * **{void}** - Requests an updated `markdownInCode.canRenderComment` context key.
+   *
+   * ## Implementation Details
+   * The contributed when-clause additionally excludes editor popups and notifications. Already-protected comments need no second Escape action.
+   *
+   * ## Agent Notes
+   * Same-position clicks may emit no selection event. Render-only Escape is an explicit user choice; do not add polling, cursor parking or a two-way toggle to work around it.
+   */
   function updateEscapeContext() {
     const editor = vscode.window.activeTextEditor;
     void vscode.commands.executeCommand('setContext', 'markdownInCode.canRenderComment',
       !!editor && !escapePins.has(editor) && !navigationPins.has(editor) && !!caretComment(editor));
   }
+  /**
+   * ## update(editor) ⇒ {void}
+   * Apply one editor's presentation while preserving source-caret history across passive focus, theme and layout refreshes.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * - `editor` **{vscode.TextEditor}** - Exact visible editor instance; another split may show the same document differently.
+   *
+   * ## Returns
+   * **{void}** - Replaces semantic/frame/code decorations and publishes test state when enabled.
+   *
+   * ## Implementation Details
+   * A returning local-file tab may have a new editor wrapper, so navigation state transfers only within its original group/version. Pending clicks render using the previous selection until activation or timeout, preventing a transient raw-source flash.
+   *
+   * ## Agent Notes
+   * Never overwrite pre-click selections from a paint-only callback. Keep prose/token foregrounds disjoint and new marker registration after existing types; inline attachment order affects measured insets. Source coordinates, editor columns and viewport CSS widths are different units.
+   */
   function update(editor: vscode.TextEditor) {
     // Rendering can run for theme/focus/options changes before the mouse event
     // reaches us. Those updates must not overwrite the pre-click cursor.
@@ -187,6 +316,23 @@ export function activate(context: vscode.ExtensionContext) {
     const presentationSelections = pendingSelection?.version === document.version
       ? pendingSelection.selections : editor.selections;
     const active = presentationSelections.map(selection => ({ start: document.offsetAt(selection.start), end: document.offsetAt(selection.end) }));
+    /**
+     * ## report(ranges, boxes) ⇒ {void}
+     * Acknowledge completed decoration application so integration tests wait for real editor updates rather than forcing them.
+     *
+     * **Kind:** function
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `ranges` **{AppliedState["ranges"]}** - Visible semantic source ranges for this application.
+     * - `boxes` **{AppliedState["boxes"]}** *(optional)* - Frame state; defaults to none.
+     *
+     * ## Returns
+     * **{void}** - Stores an incremented test snapshot and emits onDidApply, or does nothing outside test mode.
+     *
+     * ## Implementation Details
+     * The signal is emitted after decoration calls. A reported range is still not proof of painted pixels, native input routing or external-app focus.
+     */
     function report(ranges: AppliedState['ranges'], boxes: AppliedState['boxes'] = []) {
       if (!applied) return;
       states.set(editor, { sequence: ++sequence, version: document.version, languageId: document.languageId, codeAppearance, headingSizes, selections: active, ranges, boxes });
@@ -251,10 +397,42 @@ export function activate(context: vscode.ExtensionContext) {
     }
     for (const group of headingGroups.values()) for (const type of group) editor.setDecorations(type, []);
     headingTypes.forEach((type, index) => editor.setDecorations(type, visible.filter(value => value.style === 'heading' && value.level === index + 1).map(value => new vscode.Range(document.positionAt(value.start), document.positionAt(value.end)))));
+    /**
+     * ## frameColumn(decoration) ⇒ {number}
+     * Reuse the frame's measured inset for fenced bands rather than guessing from comment-prefix character counts.
+     *
+     * **Kind:** function
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `decoration` **{Decoration}** - Visible source decoration whose row needs a frame origin.
+     *
+     * ## Returns
+     * **{number}** - Source anchor column plus frame compensation, or zero without a matching frame row.
+     *
+     * ## Implementation Details
+     * Tabs, stripped prefixes and zero-width anchors can make source character positions differ from displayed columns.
+     */
     const frameColumn = (decoration: typeof visible[number]) => {
       const box = boxes.find(box => box.region === decoration.region && document.positionAt(box.anchor).line === document.positionAt(decoration.start).line);
       return box ? document.positionAt(box.anchor).character + box.marginColumns : 0;
     };
+    /**
+     * ## quoteInset(decoration) ⇒ {number}
+     * Keep explicit quote bars outside the opposite-theme code band.
+     *
+     * **Kind:** function
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `decoration` **{Decoration}** - Fence/code decoration whose row is being laid out.
+     *
+     * ## Returns
+     * **{number}** - Additional source-column inset between quote markers and the row's code background, or zero.
+     *
+     * ## Implementation Details
+     * A quoted fence uses normalized text for parsing but must still leave its source quote prefix visible in the surrounding theme.
+     */
     const quoteInset = (decoration: typeof visible[number]) => {
       const line = document.positionAt(decoration.start).line;
       const quotes = visible.filter(value => value.style === 'quoteMarker' && document.positionAt(value.start).line === line);
@@ -306,9 +484,44 @@ export function activate(context: vscode.ExtensionContext) {
     }]));
     report(visible.map(({ style, start, end, level }) => ({ style, start, end, ...(level === undefined ? {} : { level }) })), boxes.map(({ anchor, text, marginColumns, ruleAnchor, hidden }) => ({ anchor, text, marginColumns, ruleAnchor, hidden })));
   }
+  /**
+   * ## updateVisible() ⇒ {void}
+   * Refresh each visible view separately so theme/toggle changes do not collapse split-editor selection policy into document state.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * None.
+   *
+   * ## Returns
+   * **{void}** - Calls the presentation adapter for all currently visible editors.
+   *
+   * ## Implementation Details
+   * A URI can appear in multiple groups; updating only the active editor would leave stale decorations elsewhere.
+   */
   function updateVisible() { for (const editor of vscode.window.visibleTextEditors) update(editor); }
   context.subscriptions.push(
     vscode.languages.registerDocumentLinkProvider([...languages].map(language => ({ language })), {
+      /**
+       * ## provideDocumentLinks(document) ⇒ {vscode.DocumentLink[]}
+       * Route supported Markdown links through our native-activation command instead of allowing hidden destinations to take a competing opener path.
+       *
+       * **Kind:** method
+       * **Access:** private
+       *
+       * ## Parameters
+       * - `document` **{vscode.TextDocument}** - Source model requested by VS Code's link service.
+       *
+       * ## Returns
+       * **{vscode.DocumentLink[]}** - Deduplicated full-syntax hit ranges with command URI targets and destination tooltips.
+       *
+       * ## Implementation Details
+       * Multiline labels can produce multiple visible spans sharing one activation range. Uri.from preserves the encoded argument query until the command opener decodes it.
+       *
+       * ## Agent Notes
+       * Do not replace Uri.from with Uri.parse here: premature query decoding broke Windows drive-colon arguments. Providing links must remain side-effect free.
+       */
       provideDocumentLinks(document) {
         const seen = new Set<string>();
         return parseComments(document.getText(), document.fileName).flatMap(value => {
@@ -335,6 +548,27 @@ export function activate(context: vscode.ExtensionContext) {
         });
       }
     }),
+    /**
+     * ## followLink(documentUri, destination, activation) ⇒ {Promise<void>}
+     * Preserve rendered presentation during native activation despite the caret movement that VS Code reports before opening a link.
+     *
+     * **Kind:** async command handler
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `documentUri` **{string}** - Command-encoded source URI, canonicalized before matching a visible editor.
+     * - `destination` **{string}** - Target text to resolve from that document.
+     * - `activation` **{Span | undefined}** - Exact source link identity when supplied by the provider.
+     *
+     * ## Returns
+     * **{Promise<void>}** - Completes explicit target opening, or returns without action for invalid/stale input.
+     *
+     * ## Implementation Details
+     * Click history survives the 200 ms ordinary-click reveal timeout so late command dispatch can recover the original selection. Region/version protection also survives passive external focus changes and local tab return.
+     *
+     * ## Agent Notes
+     * Keep delayed activation, exact-once native opening and start/middle/end hit tests. Timer-only fixes did not reliably preserve rendering.
+     */
     vscode.commands.registerCommand('markdownInCode.followLink', async (documentUri: string, destination: string, activation?: { start: number; end: number }) => {
       if (typeof documentUri !== 'string') return;
       const sourceUri = vscode.Uri.parse(documentUri).toString();
@@ -361,6 +595,22 @@ export function activate(context: vscode.ExtensionContext) {
       if (!target) return;
       await openTarget(target, { editor, start: link.start });
     }),
+    /**
+     * ## openLink() ⇒ {Promise<void>}
+     * Offer keyboard/palette activation without requiring a modifier click or changing the ordinary source-editing policy.
+     *
+     * **Kind:** async command handler
+     * **Access:** private
+     *
+     * ## Parameters
+     * None.
+     *
+     * ## Returns
+     * **{Promise<void>}** - Opens the supported link under the active caret, or explains why no target can be opened.
+     *
+     * ## Implementation Details
+     * This explicit command intentionally does not install native-click presentation protection; source editing and navigation are separate user intents.
+     */
     vscode.commands.registerCommand('markdownInCode.openLink', async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor || !languages.has(editor.document.languageId)) return;
@@ -371,6 +621,25 @@ export function activate(context: vscode.ExtensionContext) {
       if (!target) { await vscode.window.showInformationMessage('This link target cannot be opened by Markdown in Code.'); return; }
       await openTarget(target, { editor, start: link.start });
     }),
+    /**
+     * ## renderComment() ⇒ {void}
+     * Restore formatting at the current source caret without moving it beyond a long comment or scrolling to its end.
+     *
+     * **Kind:** command handler
+     * **Access:** private
+     *
+     * ## Parameters
+     * None.
+     *
+     * ## Returns
+     * **{void}** - Protects the eligible current comment and repaints; disabled/multiple/nonempty selections are no-ops.
+     *
+     * ## Implementation Details
+     * Canceling a pending link reveal prevents its later timer from undoing Escape. Escape uses its own pin because it has no external-navigation gesture or cursor-restoration requirement.
+     *
+     * ## Agent Notes
+     * Do not implement the old cursor-after-comment strategy. An unchanged second click can be unobservable; this documented limitation is accepted rather than patched with a timing race.
+     */
     vscode.commands.registerCommand('markdownInCode.renderComment', () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) return;
@@ -384,18 +653,88 @@ export function activate(context: vscode.ExtensionContext) {
       lastSelections.set(editor, [...editor.selections]);
       update(editor);
     }),
+    /**
+     * ## toggleRendering() ⇒ {void}
+     * Make the global rendering switch authoritative over all temporary interaction exceptions.
+     *
+     * **Kind:** command handler
+     * **Access:** private
+     *
+     * ## Parameters
+     * None.
+     *
+     * ## Returns
+     * **{void}** - Clears Escape/navigation protection, flips session policy and refreshes visible views.
+     *
+     * ## Implementation Details
+     * Retaining pins across a toggle would make comments unexpectedly stay rendered when the user returns to source editing.
+     */
     vscode.commands.registerCommand('markdownInCode.toggle', () => { escapePins.clear(); navigationPins.clear(); session.toggle(); updateVisible(); }),
     vscode.window.onDidChangeActiveTextEditor(updateEscapeContext),
+    /**
+     * ## onWindowStateChanged(state) ⇒ {void}
+     * Keep a native link's comment rendered when browser/mail focus changes cause passive editor callbacks.
+     *
+     * **Kind:** event handler
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `state` **{vscode.WindowState}** - Current application focus state.
+     *
+     * ## Returns
+     * **{void}** - Refreshes navigation-protected editors and opens a brief focus-return grace period.
+     *
+     * ## Implementation Details
+     * The 200 ms grace is for late command-selection callbacks, not a general delay before every editor update.
+     *
+     * ## Agent Notes
+     * Destination-capture tests do not exercise real OS focus. Use the opt-in external-browser suite when changing this path.
+     */
     vscode.window.onDidChangeWindowState(state => {
       for (const [editor, pin] of navigationPins) {
         if (state.focused) pin.focusUntil = Date.now() + 200;
         update(editor);
       }
     }),
+    /**
+     * ## onVisibleEditorsChanged(editors) ⇒ {void}
+     * Release hidden Escape state while allowing native local-link navigation to recover its source tab later.
+     *
+     * **Kind:** event handler
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `editors` **{readonly vscode.TextEditor[]}** - New visible editor set.
+     *
+     * ## Returns
+     * **{void}** - Clears hidden Escape pins, refreshes visible presentations and updates shortcut eligibility.
+     *
+     * ## Implementation Details
+     * Escape applies to the current view; navigation has an intentional tab-return lifetime. Treating both lifetimes identically reintroduces local-file return defects.
+     */
     vscode.window.onDidChangeVisibleTextEditors(editors => {
       for (const editor of escapePins.keys()) if (!editors.includes(editor)) escapePins.delete(editor);
       updateVisible(); updateEscapeContext();
     }),
+    /**
+     * ## onSelectionChanged(event) ⇒ {void}
+     * Distinguish deliberate editing from passive navigation callbacks without guessing modifier keys the public API does not provide.
+     *
+     * **Kind:** event handler
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `event` **{vscode.TextEditorSelectionChangeEvent}** - Editor, selections and optional mouse/keyboard/command cause.
+     *
+     * ## Returns
+     * **{void}** - Releases or preserves protection, records click origin, and applies or defers source reveal.
+     *
+     * ## Implementation Details
+     * Ordinary link clicks wait briefly for native activation; other movement reveals immediately. Passive restores must not replace the pre-click origin. Escape releases on real movement or reported mouse/keyboard selection activity.
+     *
+     * ## Agent Notes
+     * No selection event is guaranteed for an identical-position click. Never infer click occurrence from hover, layout callbacks or elapsed time.
+     */
     vscode.window.onDidChangeTextEditorSelection(event => {
       const editor = event.textEditor;
       const escaped = escapePins.get(editor);
@@ -443,12 +782,44 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.onDidChangeActiveColorTheme(updateVisible),
     vscode.workspace.onDidChangeConfiguration(event => { if (event.affectsConfiguration('editor.fontSize') || event.affectsConfiguration('editor.lineHeight') || event.affectsConfiguration('editor.wordWrap')) updateVisible(); }),
     vscode.workspace.onDidOpenTextDocument(updateVisible),
+    /**
+     * ## onDocumentChanged(event) ⇒ {void}
+     * Invalidate interaction offsets before rendering edited text so old version-bound protection cannot hide a user's edit.
+     *
+     * **Kind:** event handler
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `event` **{vscode.TextDocumentChangeEvent}** - Changed document and its current version.
+     *
+     * ## Returns
+     * **{void}** - Clears matching pins/hints and updates visible views of that document.
+     *
+     * ## Implementation Details
+     * A hidden editor may still hold navigation state, so cleanup must inspect pin ownership rather than only the active view.
+     */
     vscode.workspace.onDidChangeTextDocument(event => {
       for (const [editor, pin] of escapePins) if (pin.document === event.document) escapePins.delete(editor);
       if (hintEditor?.document === event.document) clearOpenedHint();
       for (const [editor, pin] of navigationPins) if (pin.document === event.document) navigationPins.delete(editor);
       for (const editor of vscode.window.visibleTextEditors) if (editor.document === event.document) update(editor);
     }),
+    /**
+     * ## onDocumentClosed(document) ⇒ {void}
+     * Dispose retained parse source and pending interaction state when the document itself closes.
+     *
+     * **Kind:** event handler
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `document` **{vscode.TextDocument}** - Disposed source model.
+     *
+     * ## Returns
+     * **{void}** - Clears its presentation cache, pins and outstanding reveal timers.
+     *
+     * ## Implementation Details
+     * Tab hiding is not document disposal. Keeping those events distinct is necessary for both split editing and local-link return.
+     */
     vscode.workspace.onDidCloseTextDocument(document => {
       for (const [editor, pin] of escapePins) if (pin.document === document) escapePins.delete(editor);
       session.close(document.uri.toString());

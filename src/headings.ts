@@ -1,4 +1,24 @@
-/** Relative typography preserves source rows and never changes editor settings. */
+/**
+ * ## headingLayout(fontSize, configuredHeight, platform) ⇒ {object}
+ * Keep a visible heading hierarchy without changing editor settings or pretending decorations can add source-row height.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `fontSize` **{number}** - Editor base font size in pixels.
+ * - `configuredHeight` **{number}** - Editor line-height setting: zero is automatic, small values are multipliers.
+ * - `platform` **{string}** - Runtime platform used for the automatic-height approximation.
+ *
+ * ## Returns
+ * **{object}** - Effective `lineHeight` plus six level descriptors containing relative size, measured size, weight, style and theme colors.
+ *
+ * ## Implementation Details
+ * CSS percentages scale the actual heading glyphs; pixel estimates support code-band layout and verification. Wrapping must not flatten heading sizes.
+ *
+ * ## Agent Notes
+ * The scale is a human-approved behavior contract in `tests/contracts/headings.json`. Do not alter expectations or silently reduce sizes to fix overflow.
+ */
 export function headingLayout(fontSize: number, configuredHeight: number, platform: string) {
   const lineHeight = configuredHeight === 0 ? Math.round(fontSize * (platform === 'linux' ? 1.5 : 1.35))
     : configuredHeight < 8 ? Math.round(fontSize * configuredHeight) : configuredHeight;

@@ -11,16 +11,77 @@ export type Style = 'strong' | 'emphasis' | 'inlineCode' | 'delete' | 'heading' 
 export interface Decoration extends Span { style: Style; region: CommentRegion; label?: string; level?: number; destination?: string; title?: string; activation?: Span }
 const processor = unified().use(remarkParse).use(remarkGfm);
 
-/** Small AST-to-range adapter inspired by MIEV; offsets remain UTF-16 throughout. */
+/**
+ * ## parseComments(source, fileName, regions) ⇒ {Decoration[]}
+ * Adapt comment-local Markdown ASTs into source decorations without touching code outside compiler-recognized comments.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `source` **{string}** - Complete document text.
+ * - `fileName` **{string | undefined}** - Parsing context for comment extraction.
+ * - `regions` **{CommentRegion[]}** *(optional)* - Pre-extracted regions; reuse them when sharing frame/cache identity.
+ *
+ * ## Returns
+ * **{Decoration[]}** - Source-coordinate semantic spans, marker hiding, labels and link metadata.
+ *
+ * ## Implementation Details
+ * Each comment is a separate Markdown document. Tables run after inline parsing so hidden markers inform cell widths. Quote-marker subtraction prevents multiline styles from painting replacement bars.
+ *
+ * ## Agent Notes
+ * Keep code/HTML/image literal contexts intact. AST positions are normalized Markdown offsets until passed through mapping; the original source remains authoritative.
+ */
 export function parseComments(source: string, fileName?: string, regions = extractComments(source, fileName)): Decoration[] {
   const decorations: Decoration[] = [];
   for (const region of regions) {
     const tree = processor.parse(region.markdown);
     const definitions = linkDefinitions(tree);
     const tables: Parameters<typeof tableDecorations>[0][] = [];
+    /**
+     * ## add(style, start, end, level) ⇒ {void}
+     * Centralize range conversion so ordinary Markdown styles obey the same source-boundary contract.
+     *
+     * **Kind:** function
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `style` **{Style}** - Semantic decoration kind.
+     * - `start` **{number}** - Inclusive normalized Markdown offset.
+     * - `end` **{number}** - Exclusive normalized Markdown offset.
+     * - `level` **{number | undefined}** - Optional heading depth.
+     *
+     * ## Returns
+     * **{void}** - Appends mapped decorations for the current region.
+     *
+     * ## Implementation Details
+     * Multiline nodes need separate source spans rather than one range spanning removed prefixes.
+     */
     function add(style: Style, start: number, end: number, level?: number) {
       for (const span of mapRange(region, { start, end })) decorations.push({ ...span, style, region, ...(level === undefined ? {} : { level }) });
     }
+    /**
+     * ## walk(node, unordered, ordinal, quoteDepth) ⇒ {void}
+     * Carry block context through the AST so nested lists, quote markers and fences compose without guessing from source text alone.
+     *
+     * **Kind:** function
+     * **Access:** private
+     *
+     * ## Parameters
+     * - `node` **{Node}** - Current Markdown node.
+     * - `unordered` **{boolean}** *(optional)* - Current list-marker policy; defaults to false.
+     * - `ordinal` **{number | undefined}** - Computed ordered-list item number.
+     * - `quoteDepth` **{number}** *(optional)* - Enclosing quote depth; defaults to zero.
+     *
+     * ## Returns
+     * **{void}** - Adds current-region styles and records tables for the later layout pass.
+     *
+     * ## Implementation Details
+     * The AST distinguishes thematic breaks, Setext headings, tasks and literal contexts that share punctuation. Ordered presentation uses list start plus item index, not arbitrary source numbering.
+     *
+     * ## Agent Notes
+     * Preserve the no-Markdown-inside-code/HTML behavior and normalize quoted fences before tokenizing them.
+     */
     function walk(node: Parameters<typeof linkDecorations>[0], unordered = false, ordinal?: number, quoteDepth = 0) {
       if (node.type === 'table') tables.push(node);
       const start = node.position?.start.offset;

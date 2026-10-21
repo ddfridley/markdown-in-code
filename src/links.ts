@@ -8,8 +8,43 @@ interface Node {
 }
 interface Definition { url: string; title?: string | null }
 
+/**
+ * ## linkDefinitions(tree) ⇒ {Map<string, Definition>}
+ * Resolve references within one comment so identically named definitions in other comments cannot leak into it.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `tree` **{Node}** - Parsed Markdown root for one extracted region.
+ *
+ * ## Returns
+ * **{Map<string, Definition>}** - Case-normalized identifiers with the first definition winning.
+ *
+ * ## Implementation Details
+ * The parser supplies Markdown identifier normalization; this pass adds case-insensitive lookup and preserves first-definition precedence.
+ *
+ * ## Agent Notes
+ * Do not cache this map across comments. Visible duplicate definitions may remain individually clickable without changing reference resolution.
+ */
 export function linkDefinitions(tree: Node): Map<string, Definition> {
   const definitions = new Map<string, Definition>();
+  /**
+   * ## walk(node) ⇒ {void}
+   * Discover definitions regardless of their position in the comment while keeping the first binding stable.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * - `node` **{Node}** - Current Markdown node.
+   *
+   * ## Returns
+   * **{void}** - Updates the enclosing definition map.
+   *
+   * ## Implementation Details
+   * References can appear before definitions, so resolution cannot rely on a single forward rendering pass.
+   */
   function walk(node: Node) {
     const id = node.identifier?.toUpperCase();
     if (node.type === 'definition' && id && node.url !== undefined && !definitions.has(id)) definitions.set(id, { url: node.url, title: node.title });
@@ -19,6 +54,27 @@ export function linkDefinitions(tree: Node): Map<string, Definition> {
   return definitions;
 }
 
+/**
+ * ## linkDecorations(node, region, definitions) ⇒ {Decoration[]}
+ * Separate readable label styling from full-source activation so hidden link destinations cannot bypass the navigation handler.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `node` **{Node}** - Link, reference, definition or unrelated Markdown node.
+ * - `region` **{CommentRegion}** - Source mapping and owning comment.
+ * - `definitions` **{Map<string, Definition>}** - Definitions scoped to this comment.
+ *
+ * ## Returns
+ * **{Decoration[]}** - Hidden marker spans and visible link spans with destination/title and activation bounds; unresolved nodes return none.
+ *
+ * ## Implementation Details
+ * Labels may have nested inline formatting or cross source rows. Definition syntax remains visible, but its destination gets native activation too.
+ *
+ * ## Agent Notes
+ * Do not equate a visible label span with its activation span. Parsing must never open a URL or modify the source.
+ */
 export function linkDecorations(node: Node, region: CommentRegion, definitions: Map<string, Definition>): Decoration[] {
   if (node.type === 'definition' && node.url !== undefined && node.position?.start.offset !== undefined && node.position.end.offset !== undefined) {
     const start = node.position.start.offset;
@@ -45,7 +101,26 @@ export function linkDecorations(node: Node, region: CommentRegion, definitions: 
   ];
 }
 
-/** Resolve explicit activation only; parsing and rendering never open a target. */
+/**
+ * ## resolveLink(destination, documentUri) ⇒ {object | undefined}
+ * Keep destination policy in a pure helper so merely rendering a link cannot open arbitrary URI schemes.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `destination` **{string}** - Markdown target; protocol-relative addresses use HTTPS.
+ * - `documentUri` **{string}** - Absolute source-document URI used as the base for relative file links.
+ *
+ * ## Returns
+ * **{{kind: "external" | "editor", uri: string} | undefined}** - Supported resolved target, or no target for malformed/unsupported input.
+ *
+ * ## Implementation Details
+ * Relative paths belong to the source directory, not the workspace root. Web/mail targets open externally; file and relative same-scheme targets remain in the editor.
+ *
+ * ## Agent Notes
+ * Fragment-only heading lookup is not implemented. Keep command/script/data schemes rejected and preserve encoded Windows path tests.
+ */
 export function resolveLink(destination: string, documentUri: string): { kind: 'external' | 'editor'; uri: string } | undefined {
   if (!destination || destination.startsWith('#')) return undefined;
   try {

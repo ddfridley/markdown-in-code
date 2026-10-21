@@ -8,14 +8,65 @@ export interface CommentRegion extends Span {
   segments: Segment[];
 }
 
-/** Compiler-derived trivia avoids treating strings, regexes and template text as comments. */
+/**
+ * ## extractComments(source, fileName) ⇒ {CommentRegion[]}
+ * Find compiler-recognized comments and prepare Markdown input without losing its original source coordinates.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `source` **{string}** - Complete, unmodified document text.
+ * - `fileName` **{string}** *(optional)* - Compiler parsing context; defaults to `source.ts`, including JSX/TSX recognition when appropriate.
+ *
+ * ## Returns
+ * **{CommentRegion[]}** - Ordered comment regions with normalized Markdown and per-row UTF-16 source mappings.
+ *
+ * ## Implementation Details
+ * Trivia helpers alone can report comment-like text inside literals. Compiler traversal supplies exclusion spans; prefix normalization preserves meaningful indentation and fence contents. Adjacent standalone line comments are grouped only when intervening source is whitespace on the next row.
+ *
+ * ## Agent Notes
+ * Keep source offsets and normalized Markdown offsets distinct. Do not replace compiler recognition with a comment regex. Preserve LF/CRLF, literal-context and prefix-ambiguity cases in `tests/adapter.test.ts`.
+ */
 export function extractComments(source: string, fileName = 'source.ts'): CommentRegion[] {
   const file = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true);
   const ranges = new Map<number, ts.CommentRange>();
   const literalSpans: Span[] = [];
+  /**
+   * ## collect(rangesToAdd) ⇒ {void}
+   * Deduplicate trivia discovered through overlapping compiler nodes so each source comment is normalized once.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * - `rangesToAdd` **{ts.CommentRange[] | undefined}** - Leading or trailing trivia returned by a compiler helper.
+   *
+   * ## Returns
+   * **{void}** - Updates the enclosing map keyed by source start offset.
+   *
+   * ## Implementation Details
+   * The same comment can be discovered from several syntax nodes. Source-position keys prevent duplicate regions and decorations.
+   */
   function collect(rangesToAdd: ts.CommentRange[] | undefined) {
     for (const range of rangesToAdd ?? []) ranges.set(range.pos, range);
   }
+  /**
+   * ## walk(node) ⇒ {void}
+   * Collect literal exclusions alongside trivia because the trivia helpers are not syntax-context aware.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * - `node` **{ts.Node}** - Current node in the source file created by the enclosing extraction call.
+   *
+   * ## Returns
+   * **{void}** - Adds literal spans and candidate comments to enclosing collections.
+   *
+   * ## Implementation Details
+   * Using compiler children preserves template-expression comments while excluding template text, strings, regular expressions and JSX text.
+   */
   function walk(node: ts.Node) {
     if (ts.isStringLiteralLike(node) || ts.isRegularExpressionLiteral(node) ||
         ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node) || ts.isJsxText(node)) {
@@ -78,6 +129,22 @@ export function extractComments(source: string, fileName = 'source.ts'): Comment
     return { start: range.pos, end: range.end, kind: block ? 'block' : 'line', markdown, segments };
   });
   const grouped: CommentRegion[] = [];
+  /**
+   * ## standalone(region) ⇒ {boolean}
+   * Distinguish comment-only rows from trailing comments so grouping cannot swallow surrounding code.
+   *
+   * **Kind:** function
+   * **Access:** private
+   *
+   * ## Parameters
+   * - `region` **{CommentRegion}** - Candidate compiler-derived comment.
+   *
+   * ## Returns
+   * **{boolean}** - True only for a line comment preceded solely by indentation on its source row.
+   *
+   * ## Implementation Details
+   * Grouping is a presentation decision, not a reason to reinterpret a trailing comment as a block.
+   */
   const standalone = (region: CommentRegion) => region.kind === 'line' && /^[\t ]*$/.test(source.slice(source.lastIndexOf('\n', region.start - 1) + 1, region.start));
   for (let index = 0; index < comments.length; index++) {
     const first = comments[index];
@@ -101,7 +168,26 @@ export function extractComments(source: string, fileName = 'source.ts'): Comment
   return grouped;
 }
 
-/** Split multiline decorations to exclude stripped prefixes, delimiters and line endings. */
+/**
+ * ## mapRange(region, range) ⇒ {Span[]}
+ * Translate a Markdown range into disjoint source spans so styling never covers stripped comment prefixes or line endings.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `region` **{CommentRegion}** - Extracted region and its segment mapping.
+ * - `range` **{Span}** - Half-open UTF-16 offsets in `region.markdown`, not in the original document.
+ *
+ * ## Returns
+ * **{Span[]}** - Nonempty source spans; invalid, out-of-bounds and zero-width inputs return an empty array.
+ *
+ * ## Implementation Details
+ * One logical Markdown node may cross rows with removed prefixes. A single source range would accidentally style those prefixes.
+ *
+ * ## Agent Notes
+ * Zero-width table attachments intentionally use their own anchor mapping. Do not broaden this mapper to include delimiters or CRLF bytes.
+ */
 export function mapRange(region: CommentRegion, range: Span): Span[] {
   if (!Number.isInteger(range.start) || !Number.isInteger(range.end) ||
       range.start < 0 || range.end > region.markdown.length || range.end <= range.start) return [];

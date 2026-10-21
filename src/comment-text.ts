@@ -1,7 +1,26 @@
 import type { BoxLine } from './boxes';
 import type { Decoration } from './markdown';
 
-/** Color rendered prose without overlapping heading, marker or code foregrounds. */
+/**
+ * ## commentText(boxes, decorations) ⇒ {Decoration[]}
+ * Apply neutral prose colors without overriding link, heading, frame or code presentation.
+ *
+ * **Kind:** function
+ * **Access:** public
+ *
+ * ## Parameters
+ * - `boxes` **{BoxLine[]}** - Visible frame plans, which identify eligible comment regions.
+ * - `decorations` **{Decoration[]}** - Already-filtered semantic decorations for the editor.
+ *
+ * ## Returns
+ * **{Decoration[]}** - Uncovered source-text spans using the `commentText` style.
+ *
+ * ## Implementation Details
+ * Monaco foreground overlap order is not a semantic cascade. Subtracting protected spans avoids prose colors winning over more specific styles.
+ *
+ * ## Agent Notes
+ * When adding a foreground-bearing style, review this exclusion list. Region identity connects frames and semantic ranges; matching by text is unsafe.
+ */
 export function commentText(boxes: BoxLine[], decorations: Decoration[]): Decoration[] {
   const result: Decoration[] = [];
   for (const region of new Set(boxes.map(box => box.region))) {
