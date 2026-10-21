@@ -1,5 +1,49 @@
 # Markdown in Code: Development Plan
 
+## Current release scope and hardening
+
+The next milestone is a private local testing release on this laptop, not another Markdown feature slice. The existing JavaScript/TypeScript/JSX/TSX features and Escape interaction are the release scope. **Embedded HTML-comment presentation, images/richer blocks and additional source languages are deferred to a future release.** This decision supersedes historical next-slice entries below. HTML/image syntax keeps its current literal behavior; standalone Markdown remains out of scope.
+
+The local package uses `local.markdown-in-code` version `0.0.1`. `local` is a private testing namespace, not a registered Marketplace publisher. Keep npm `private: true`; no publishing or account creation is authorized by local installation.
+
+### Local package and installation
+
+- [x] Build a VSIX using the pinned official packaging tool and bundled runtime; inspect the actual archive allowlist.
+- [x] Include the project MIT license, architectural credit and license/notice texts for every bundled runtime dependency.
+- [x] Exclude node_modules, test apps, screenshots, preliminary images, development settings, source maps and local state from the VSIX.
+- [x] Smoke-test the installed VSIX in an isolated profile, including production activation, bundled parsing/link discovery, Escape and toggle commands.
+- [x] Install into the normal laptop profile and verify `local.markdown-in-code@0.0.1`.
+- [ ] Reload the normal VS Code window and manually test without F5.
+- [ ] Check for an older Markdown-in-comments renderer affecting the same JS/TS files. Keep MIEV for standalone Markdown; choose one active comment renderer when comparing results.
+- [x] Document rebuild/reinstall, version increments and rollback/uninstall in README.
+- [ ] Verify updates do not reset user preferences.
+
+Packaging verification: 110 unit tests, typecheck/build and 26 integration checks pass. The isolated installed VSIX passes its production-mode smoke test on VS Code 1.142.0. Runtime dependency audit reports zero vulnerabilities; development dependency findings remain a separate hardening task. The older `undefined_publisher.md-in-comments` extension is installed on this laptop; its enabled state and interaction should be checked manually. Packaging does not change rendering code or accepted screenshots.
+
+### Before calling this a public release
+
+- [ ] Run the configured Windows/macOS/Linux CI and inspect uploaded failures; authored workflows alone do not establish cross-platform success.
+- [ ] Re-run unit/type/build, integration, actual Escape/Ctrl+click, heading-contract mutation and visual mutation suites from a clean checkout.
+- [ ] Require all 29 accepted visual cases to match. Investigate the transient horizontal-scrollbar capture before treating it as a stable regression; retain human approval for any pixel changes.
+- [ ] Test normal installed mode alongside F5/Test mode: commands, opening/reopening documents, edits, saves/undo/redo, selection, multiple carets and split groups.
+- [ ] Exercise long comments, large files, rapid typing/navigation and many open editors. Measure parse/decorate latency, memory and timer/cache cleanup before optimizing.
+- [ ] Check light/dark/high-contrast themes, font families/sizes/ligatures, zoom, tabs, LF/CRLF, minimap, sidebars, narrow views and horizontal scrolling.
+- [ ] Recheck heading overflow, wrapped continuation frames, table 4096-column fallback/recovery, Unicode-width fallbacks and rich-cell layout. Document supported behavior rather than promising full HTML layout.
+- [ ] Test Escape against Find, suggestions, rename, snippets, notifications, Ctrl+P/Ctrl+Shift+P and user bindings. Keep its accepted same-position click limitation explicit.
+- [ ] Exercise real external/browser/mail focus and local links; preserve trusted-domain prompts and the no-arbitrary-scheme policy. Capture-mode target logs are not proof of real opening.
+- [ ] Verify supported URI/document lifecycles: untitled, read-only, remote/WSL and untrusted workspaces. Decide which are supported for the public release.
+- [ ] Triage runtime and development dependency audits separately. Do not use forced dependency upgrades that silently change parser behavior.
+- [ ] Verify the advertised minimum VS Code version and extension-host Node compatibility; CSS attachment behavior depends on Monaco versions.
+- [ ] Review package size, bundle externals, content/secret exclusions and third-party notice completeness after dependency updates.
+- [ ] Finalize version/changelog, stable publisher ID, repository/support URLs, categories and a concise installed-user README. Marketplace publication requires a separate explicit request.
+- [ ] Keep a small troubleshooting/report template: extension/VS Code version, OS/theme/font/wrap settings, minimal comment and screenshot. Reproduce with competing comment renderers disabled.
+
+### Future release backlog
+
+1. Embedded HTML comments in Markdown, with a separately agreed literal/rendered policy.
+2. Images and richer blocks, with explicit rendering/fallback decisions rather than implicit HTML support.
+3. More programming languages, one compiler/tokenizer-backed adapter at a time.
+
 ## Recommendation
 
 Build `markdown-in-code` as a distinct extension, using MIEV as the implementation base or selectively adapting its Markdown parsing and decoration code. Do not wait for upstream participation: the author is not reachable and the repository appears inactive, with many open PRs. Do not treat the installed MIEV extension as a runtime dependency: its package is private, it exposes no supported library API, and its parser/decorator are internal extension modules. First prove the comment-to-document mapping, then choose between a fork-based workflow and selective code adaptation.

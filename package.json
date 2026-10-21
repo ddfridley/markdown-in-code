@@ -1,5 +1,6 @@
 {
   "name": "markdown-in-code",
+  "publisher": "local",
   "version": "0.0.1",
   "private": true,
   "description": "Experimental inline Markdown formatting in JavaScript and TypeScript comments.",
@@ -12,13 +13,22 @@
   "author": "David Fridley",
   "type": "commonjs",
   "main": "./dist/extension.cjs",
+  "files": [
+    "dist/extension.cjs",
+    "dist/THIRD_PARTY_NOTICES.txt",
+    "README.md",
+    "LICENSE",
+    "demo.ts",
+    "docs/**/*.md"
+  ],
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
     "check": "tsc --noEmit",
-    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/extension.cjs --sourcemap",
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/extension.cjs --sourcemap --metafile=dist/extension-meta.json",
+    "package:local": "npm run build && node scripts/package-local.mjs",
     "test": "vitest run",
     "test:integration": "npm run build && esbuild tests/integration/index.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/integration/index.cjs && node scripts/run-integration.mjs",
     "test:navigation": "npm run build && esbuild tests/navigation/index.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/navigation/index.cjs && node scripts/run-navigation.mjs",
@@ -31,18 +41,19 @@
     "vscode:prepublish": "npm run build"
   },
   "dependencies": {
-    "typescript": "6.0.3",
-    "unified": "11.0.5",
+    "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
-    "remark-gfm": "4.0.1"
+    "typescript": "6.0.3",
+    "unified": "11.0.5"
   },
   "devDependencies": {
-    "pixelmatch": "7.1.0",
-    "pngjs": "7.0.0",
-    "@vscode/test-electron": "2.5.2",
     "@types/node": "^22.0.0",
     "@types/vscode": "1.100.0",
+    "@vscode/test-electron": "2.5.2",
+    "@vscode/vsce": "4.0.0",
     "esbuild": "0.28.0",
+    "pixelmatch": "7.1.0",
+    "pngjs": "7.0.0",
     "vitest": "4.1.8"
   },
   "engines": {

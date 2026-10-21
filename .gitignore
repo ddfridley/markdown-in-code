@@ -6,3 +6,4 @@ coverage/
 .vscode-test/
 tests/visual/preliminary/
 .bashrc
+/debug.log

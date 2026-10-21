@@ -1,6 +1,31 @@
 # Markdown in Code
 
-Phase 1 prototype of a VS Code extension for Markdown in JavaScript/TypeScript comments (including JSX/TSX). Standalone Markdown files are outside the initial scope.
+An experimental VS Code extension for Markdown in JavaScript/TypeScript comments (including JSX/TSX), ready for private local testing. Standalone Markdown files are outside this release. HTML-comment presentation, images/richer blocks and additional source languages are deferred to a future release.
+
+## Install locally for everyday testing
+
+The private extension ID is `local.markdown-in-code`, version `0.0.1`. Build and install from Git Bash using the repository's NVS setup:
+
+```sh
+source ./.bashrc
+npm ci
+npm run package:local
+code --install-extension ./markdown-in-code-0.0.1.vsix --force
+```
+
+Run **Developer: Reload Window** in your normal VS Code window after installation. F5 is unnecessary for everyday use. Node/NVS is needed for development and the demo; the installed extension bundles its runtime dependencies.
+
+If the older **MD in Comments** extension is also enabled, disable it in the Extensions view while testing to avoid two renderers affecting the same comments. MIEV can remain available for standalone Markdown. Installation does not change other extensions or editor settings.
+
+To update, increment the package version, rebuild, reinstall the new VSIX and reload. Keep a previous VSIX to roll back using the same install command with `--force`. To uninstall:
+
+```sh
+code --uninstall-extension local.markdown-in-code
+```
+
+The package includes the bundled extension, demo, documentation and third-party license notices; development files and source maps are excluded. This private package has not been published to the Marketplace. See [release scope and hardening](PLAN.md#current-release-scope-and-hardening).
+
+## Feature tour
 
 Open [demo.ts](demo.ts) in the F5 development window for a working-feature tour, with layered Node HTTP functions documented using the [md-comments function template](../md-comments/README.md#function-documentation-template). Put the cursor outside comments to render them. To run the server with the repository's Node 24 version, use Git Bash:
 
@@ -67,7 +92,7 @@ Selective adaptation is the chosen reuse strategy: keep extraction, mapping, par
 
 Unit tests cover comment extraction and computed ranges. `npm run test:integration` runs real VS Code extension-host behavior checks. The separate pinned Linux screenshot harness checks painted editor output. See [testing instructions](docs/testing.md) for the test applications, isolated sessions and CI configuration.
 
-The screenshot harness is now available: `npm run test:visual:docker` compares seventeen editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Tests write separate preliminary images and leave accepted images read-only. Changed/missing images fail until interactive human acceptance; automatic updates are disabled.
+The screenshot harness is now available: `npm run test:visual:docker` compares twenty-nine editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Tests write separate preliminary images and leave accepted images read-only. Changed/missing images fail until interactive human acceptance; automatic updates are disabled.
 
 Phase 2's [behavior contract](docs/behavior.md) specifies comment types, selection boundaries, multiple carets, split editors, toggling, cache updates, and the raw presentation of deferred Markdown features. Use `tests/fixtures/behavior.ts` for its manual checks.
 
@@ -81,6 +106,6 @@ Ordered and task lists and their screenshots are approved; see [numbering, check
 
 Blockquotes and their screenshots are approved; see [nested bars, contained Markdown and manual checks](docs/blockquotes.md).
 
-Links, autolinks and references are implemented for review, including **Markdown in Code: Open Link at Cursor**; see [behavior and manual checks](docs/links.md). Their screenshots await separate approval.
+Links, autolinks and references are implemented and approved, including **Markdown in Code: Open Link at Cursor**; see [behavior and manual checks](docs/links.md). Their screenshots have human approval.
 
 Same-line comment links render too. Normal click edits; Ctrl+click (or the modifier shown in VS Code's hover) opens the link while preserving the source cursor and rendered comment.
