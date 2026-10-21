@@ -4,7 +4,7 @@ import { watch } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:net';
-import { connect, captureEditor, controlClickLink } from './visual/cdp.mjs';
+import { connect, captureEditor, controlClickLink, editorLayout } from './visual/cdp.mjs';
 import { compareFiles } from './visual/compare.mjs';
 import { verifyAccepted, sha256, writeReview } from './visual/review.mjs';
 
@@ -54,6 +54,7 @@ async function scan() {
         if (request.theme !== (request.name.endsWith('-dark') ? 'dark' : 'light')) throw new Error('Unexpected capture theme');
         const actual = join(artifact, `${request.name}.actual.png`);
         await writeFile(actual, await captureEditor(cdp, request.width, mutation, request.theme, request.name === 'tables-long-scrolled-light'));
+        await writeFile(join(artifact, `${request.name}.layout.json`), JSON.stringify(await editorLayout(cdp), null, 2));
         const expected = join(baseline, `${request.name}.png`);
         const report = await compareFiles(expected, actual, join(artifact, `${request.name}.diff.png`), join(artifact, `${request.name}.expected.png`));
         reports.push({ name: request.name, ...report, candidateSha256: sha256(await readFile(actual)), acceptedSha256: accepted.manifest.images[request.name] ?? null });

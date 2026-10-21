@@ -97,6 +97,17 @@ export async function captureEditor(cdp, width, mutation, theme, scrollRight = f
   throw new Error('Editor pixels did not stabilize across three captures');
 }
 
+export async function editorLayout(cdp) {
+  const result = await cdp.command('Runtime.evaluate', { returnByValue: true, expression: `(() => {
+    const editor = document.querySelector('.monaco-editor');
+    return [...editor.querySelectorAll('.overflow-guard, .monaco-scrollable-element, .native-edit-context, .view-overlays, .view-rulers, .view-zones, .view-lines, .minimap, .scroll-decoration, .scrollbar.vertical')].map(node => {
+      const rect = node.getBoundingClientRect();
+      return { class: node.className, x: rect.x, width: rect.width, style: node.getAttribute('style') };
+    });
+  })()` });
+  return result.result.value;
+}
+
 /** Exercise VS Code's native modifier-click path against a local fixture only. */
 export async function controlClickLink(cdp, label, control = true, fraction = 0.5) {
   const result = await cdp.command('Runtime.evaluate', { returnByValue: true, expression: `(() => {

@@ -4,13 +4,13 @@ An experimental VS Code extension for Markdown in JavaScript/TypeScript comments
 
 ## Install locally for everyday testing
 
-The private extension ID is `local.markdown-in-code`, version `0.0.2`. Build and install from Git Bash using the repository's NVS setup:
+The private extension ID is `local.markdown-in-code`, version `0.0.3`. Build and install from Git Bash using the repository's NVS setup:
 
 ```sh
 source ./.bashrc
 npm ci
 npm run package:local
-code --install-extension ./markdown-in-code-0.0.2.vsix --force
+code --install-extension ./markdown-in-code-0.0.3.vsix --force
 ```
 
 Run **Developer: Reload Window** in your normal VS Code window after installation. F5 is unnecessary for everyday use. Node/NVS is needed for development and the demo; the installed extension bundles its runtime dependencies.
@@ -42,7 +42,7 @@ source ./.bashrc
 node demo.ts
 ```
 
-Open the printed URL (normally `http://127.0.0.2:3000/`); Ctrl+C stops the server. Optional `HOST`, `PORT` and `GREETING` environment variables configure it. `PORT=0 node demo.ts` requests an available port. The demo needs no extra dependencies and is included in the normal TypeScript check.
+Open the printed URL (normally `http://127.0.0.3:3000/`); Ctrl+C stops the server. Optional `HOST`, `PORT` and `GREETING` environment variables configure it. `PORT=0 node demo.ts` requests an available port. The demo needs no extra dependencies and is included in the normal TypeScript check.
 
 The prototype renders inline formatting, headings, horizontal rules, lists, task boxes, blockquotes and links in code comments. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions have unit, extension-host and screenshot coverage.
 
@@ -84,7 +84,7 @@ Open this directory in VS Code and press F5 to launch the extension development 
 
 If F5 reports that the extension host did not start in 10 seconds, use **Terminal > Run Task > Preview Markdown in Code**. This builds the extension and opens the fixture in a development window without debugger attachment. The local debugger trace has shown connection failures to its loopback debug port; this preview task bypasses that startup path. Breakpoints require a working debug launch and are unavailable through this task.
 
-F5 now starts the development host with `--inspect-extensions=9333` and then attaches a Node debugger to `127.0.0.2:9333`. The launch task polls the inspector endpoint before attaching. This avoids the early startup pause used by the standard extension-host debug launch, which crashed with exit code 134 locally after the VS Code update. Removing the default Node-internals skip rule did not resolve that crash. The new host launch and inspector availability have been verified; F5 attachment still needs confirmation. The launcher records the inspector's target ID in the ignored `.vscode/debug-host.json` and reuses a matching running host on subsequent launches. Reload that development window to load rebuilt extension code, or close it before F5 for a fresh host. An unrecognized inspector on port 9333 still produces a port-in-use error. The launcher script currently requires Windows PowerShell.
+F5 now starts the development host with `--inspect-extensions=9333` and then attaches a Node debugger to `127.0.0.3:9333`. The launch task polls the inspector endpoint before attaching. This avoids the early startup pause used by the standard extension-host debug launch, which crashed with exit code 134 locally after the VS Code update. Removing the default Node-internals skip rule did not resolve that crash. The new host launch and inspector availability have been verified; F5 attachment still needs confirmation. The launcher records the inspector's target ID in the ignored `.vscode/debug-host.json` and reuses a matching running host on subsequent launches. Reload that development window to load rebuilt extension code, or close it before F5 for a fresh host. An unrecognized inspector on port 9333 still produces a port-in-use error. The launcher script currently requires Windows PowerShell.
 
 ## Adapter boundary
 

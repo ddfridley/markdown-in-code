@@ -4,6 +4,7 @@ import { RenderingSession } from './rendering';
 import type { AppliedState, TestApi } from './test-api';
 import { CODE_PALETTES, CODE_STYLES, type CodeStyle } from './fenced-code';
 import { headingLayout } from './headings';
+import { nativeViewportWidthRules } from './viewport-width';
 import { commentText } from './comment-text';
 import { parseComments } from './markdown';
 import { resolveLink } from './links';
@@ -170,9 +171,9 @@ export function activate(context: vscode.ExtensionContext) {
       codeText: { color: palette.foreground, fontStyle: 'normal', fontWeight: 'normal' },
       codeKeyword: { color: palette.keyword }, codeString: { color: palette.string },
       codeNumber: { color: palette.number }, codeComment: { color: palette.comment },
-      // The view-lines width excludes the minimap; its scrollable parent does not.
-      // Scope the query container to editors displaying these fence decorations.
-      codeFence: { color: 'transparent', textDecoration: 'none; position: static; .monaco-editor .view-lines:has(&) { container-type: inline-size; }' }
+      // Prefer the native input's viewport width where available. Older renderers
+      // retain the existing text-layer query container as the explicit fallback.
+      codeFence: { color: 'transparent', textDecoration: 'none; position: static; .monaco-editor .view-lines:has(&) { container-type: inline-size; } ' + nativeViewportWidthRules() }
     };
     const entries = CODE_STYLES.map(style => [style, vscode.window.createTextEditorDecorationType({
       ...(style === 'codeBackground' ? {} : { fontStyle: 'normal', fontWeight: 'normal', textDecoration: 'none; position: relative; z-index: 1;' }),
@@ -454,7 +455,9 @@ export function activate(context: vscode.ExtensionContext) {
               contentText: ` ${decoration.label} `,
               color: CODE_PALETTES[codeAppearance].foreground,
               backgroundColor: CODE_PALETTES[codeAppearance].background,
-              textDecoration: `none; position: fixed; left: calc(50cqw + ${(frameColumn(decoration) + 1 + quoteInset(decoration)) / 2}ch - ${config.get<number>('scrollbar.verticalScrollbarSize', 14) / 2}px); transform: translateX(-50%); z-index: 2;`
+              // Native input width already excludes the scrollbar. Deduct it
+              // only in the legacy text-layer fallback, as before.
+              textDecoration: `none; position: fixed; left: calc(var(--mic-native-viewport-width, calc(100cqw - ${config.get<number>('scrollbar.verticalScrollbarSize', 14)}px)) / 2 + ${(frameColumn(decoration) + 1 + quoteInset(decoration)) / 2}ch); transform: translateX(-50%); z-index: 2;`
             } : undefined,
             after: {
               contentText: '', color: CODE_PALETTES[codeAppearance].foreground,

@@ -5,6 +5,7 @@ import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:net';
 import { connect, controlClickLink, clickEditorLine } from './visual/cdp.mjs';
+import { assertFenceViewport } from './visual/fence-viewport.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const session = resolve(root, '.vscode-test', 'navigation', String(Date.now()));
@@ -12,7 +13,7 @@ const workspace = join(session, 'workspace');
 const bridge = join(session, 'bridge');
 await mkdir(workspace, { recursive: true });
 for (const name of ['requests', 'acks']) await mkdir(join(bridge, name), { recursive: true });
-for (const name of ['links.ts', 'unordered-lists.ts']) await cp(join(root, 'tests/visual/fixtures', name), join(workspace, name));
+for (const name of ['links.ts', 'unordered-lists.ts', 'headings-wrap.ts']) await cp(join(root, 'tests/visual/fixtures', name), join(workspace, name));
 const server = createServer();
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const port = server.address().port;
@@ -29,7 +30,10 @@ async function scan() {
     queue = queue.then(async () => {
       try {
         cdp ??= await connect(port);
-        if (request.key) {
+        if (request.label === '__fence_viewport__') {
+          if (![1, 2].includes(request.fraction)) throw new Error('Unexpected viewport editor count');
+          await assertFenceViewport(cdp, request.fraction, process.env.MIC_REQUIRE_NATIVE_VIEWPORT === '1');
+        } else if (request.key) {
           const keyCode = { Escape: 27, ArrowRight: 39 }[request.key];
           if (!keyCode) throw new Error('Unexpected test key');
           await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key: request.key, code: request.key, windowsVirtualKeyCode: keyCode });

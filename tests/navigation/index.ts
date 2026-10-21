@@ -152,5 +152,22 @@ export async function run() {
   await until(() => !api.snapshot(editor)!.ranges.some(value => value.style === 'link' && value.start === document.getText().indexOf('Edited label')), 'physical arrow resumes source editing');
   assert.equal(document.getText(), original.replace('Readable label', 'Edited label'));
   console.log('PASS physical Escape respects Find, preserves cursor/viewport, and releases on click/arrow');
+  const viewportSettings = vscode.workspace.getConfiguration('editor');
+  for (const [key, value] of Object.entries({ fontSize: 16, lineHeight: 24, wordWrap: 'on', 'minimap.enabled': true })) {
+    await viewportSettings.update(key, value, vscode.ConfigurationTarget.Global);
+  }
+  const viewportDocument = await vscode.workspace.openTextDocument(join(vscode.workspace.workspaceFolders![0].uri.fsPath, 'headings-wrap.ts'));
+  const viewportSource = viewportDocument.getText();
+  const firstViewport = await vscode.window.showTextDocument(viewportDocument, { viewColumn: vscode.ViewColumn.One, preview: false });
+  firstViewport.selection = new vscode.Selection(0, 0, 0, 0);
+  await until(() => !!api.snapshot(firstViewport)?.ranges.some(value => value.style === 'codeFence'), 'first viewport fence');
+  await click('__fence_viewport__', false, 1);
+  const secondViewport = await vscode.window.showTextDocument(viewportDocument, { viewColumn: vscode.ViewColumn.Two, preview: false });
+  secondViewport.selection = new vscode.Selection(0, 0, 0, 0);
+  await vscode.commands.executeCommand('workbench.action.increaseViewSize');
+  await vscode.commands.executeCommand('workbench.action.increaseViewSize');
+  await until(() => !!api.snapshot(secondViewport)?.ranges.some(value => value.style === 'codeFence'), 'second viewport fence');
+  await click('__fence_viewport__', false, 2);
+  assert.equal(viewportDocument.getText(), viewportSource);
   console.log(`PASS ordinary click reveals source without opening; native mouse checks passed on VS Code ${vscode.version}`);
 }
