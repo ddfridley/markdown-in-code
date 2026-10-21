@@ -7,8 +7,9 @@ import { createServer } from 'node:net';
 import { connect, captureEditor, controlClickLink, editorLayout } from './visual/cdp.mjs';
 import { compareFiles } from './visual/compare.mjs';
 import { verifyAccepted, sha256, writeReview } from './visual/review.mjs';
+import { assertFenceViewport } from './visual/fence-viewport.mjs';
 
-const environment = 'debian-bookworm-20250615-node22.16-vscode1.100.3-x64';
+const environment = 'debian-bookworm-20250615-node22.16-vscode1.142.0-x64';
 if (process.platform !== 'linux' || process.arch !== 'x64' || process.env.MIC_VISUAL_ENVIRONMENT !== environment) {
   throw new Error('Visual comparisons and updates must run through the pinned Docker image. Use npm run test:visual:docker.');
 }
@@ -25,12 +26,15 @@ const baseline = resolve(root, 'tests/visual/baselines');
 for (const directory of [artifact, baseline, join(session, 'workspace'), join(session, 'user-data/User'), join(bridge, 'requests'), join(bridge, 'acks')]) await mkdir(directory, { recursive: true });
 await cp(resolve(root, 'tests/visual/fixtures'), join(session, 'workspace'), { recursive: true });
 await copyFile(resolve(root, 'tests/visual/settings.json'), join(session, 'user-data/User/settings.json'));
-const metadata = { environment, vscode: '1.100.3', node: process.version, font: 'DejaVu Sans Mono', fontSize: 16, lineHeight: 24, scale: 1, capture: 'editor-excluding-scrollbar-and-overview-ruler', pixelThreshold: 0.1, allowedDifferingPixels: 0 };
+const metadata = { environment, vscode: '1.142.0', node: process.version, font: 'DejaVu Sans Mono', fontSize: 16, lineHeight: 24, scale: 1, capture: 'editor-excluding-scrollbar-and-overview-ruler', pixelThreshold: 0.1, allowedDifferingPixels: 0 };
 const accepted = await verifyAccepted(baseline);
-{
-  const recorded = JSON.parse(await readFile(join(baseline, 'environment.json'), 'utf8'));
-  if (JSON.stringify(recorded) !== JSON.stringify(metadata)) throw new Error('Visual environment differs from approved metadata; do not update automatically.');
-}
+const acceptedMetadata = await readFile(join(baseline, 'environment.json'));
+const environmentChanged = JSON.stringify(JSON.parse(acceptedMetadata)) !== JSON.stringify(metadata);
+if (environmentChanged && !process.argv.includes('--review-environment')) throw new Error('Visual environment differs from approved metadata. Capture with --review-environment for human review; accepted metadata must remain unchanged.');
+if (environmentChanged && mutation) throw new Error('Environment review cannot be combined with visual mutations');
+const candidateMetadata = environmentChanged ? Buffer.from(JSON.stringify(metadata, null, 2) + '\n') : acceptedMetadata;
+await writeFile(join(artifact, 'candidate-environment.json'), candidateMetadata);
+await writeFile(join(artifact, 'accepted-environment.json'), acceptedMetadata);
 const port = await new Promise((resolvePort, reject) => {
   const server = createServer();
   server.on('error', reject);
@@ -53,7 +57,11 @@ async function scan() {
         cdp ??= await connect(port);
         if (request.theme !== (request.name.endsWith('-dark') ? 'dark' : 'light')) throw new Error('Unexpected capture theme');
         const actual = join(artifact, `${request.name}.actual.png`);
-        await writeFile(actual, await captureEditor(cdp, request.width, mutation, request.theme, request.name === 'tables-long-scrolled-light'));
+        await writeFile(actual, await captureEditor(cdp, request.width, mutation, request.theme, request.name === 'tables-long-scrolled-light', async frames => {
+          for (const [index, frame] of frames.entries()) await writeFile(join(artifact, `${request.name}.unstable-${index + 1}.png`), frame);
+          await writeFile(join(artifact, `${request.name}.layout.json`), JSON.stringify(await editorLayout(cdp), null, 2));
+        }));
+        if (request.name === 'headings-wrapped-light') await assertFenceViewport(cdp, 1, true);
         await writeFile(join(artifact, `${request.name}.layout.json`), JSON.stringify(await editorLayout(cdp), null, 2));
         const expected = join(baseline, `${request.name}.png`);
         const report = await compareFiles(expected, actual, join(artifact, `${request.name}.diff.png`), join(artifact, `${request.name}.expected.png`));
@@ -80,7 +88,7 @@ delete process.env.ELECTRON_RUN_AS_NODE;
 console.log(`Visual artifacts: ${artifact}`);
 let failure;
 try {
-  await runTests({ version: '1.100.3', extensionDevelopmentPath: root, extensionTestsPath: resolve(root, 'dist/visual/index.cjs'),
+  await runTests({ version: '1.142.0', extensionDevelopmentPath: root, extensionTestsPath: resolve(root, 'dist/visual/index.cjs'),
     extensionTestsEnv: { MIC_VISUAL_BRIDGE: bridge },
     launchArgs: [join(session, 'workspace'), '--no-sandbox', '--disable-gpu', '--disable-extensions', '--disable-workspace-trust', '--skip-welcome', '--skip-release-notes',
       `--remote-debugging-port=${port}`, '--remote-debugging-address=127.0.0.1', '--force-device-scale-factor=1',
@@ -92,12 +100,12 @@ finally {
     if ((await verifyAccepted(baseline)).hash !== accepted.hash) failure = 'Accepted baselines changed during capture; rerun against a stable accepted set';
   } catch (error) { failure = `Accepted baseline integrity failed during capture: ${error}`; }
   await cp(join(session, 'user-data/logs'), join(artifact, 'logs'), { recursive: true }).catch(() => {});
-  const report = { runId, metadata, metadataSha256: sha256(await readFile(join(baseline, 'environment.json'))), acceptedManifestSha256: accepted.hash, cases: [...names], mutation, failure, reports };
+  const report = { runId, metadata, metadataSha256: sha256(candidateMetadata), acceptedMetadataSha256: sha256(acceptedMetadata), environmentChanged, acceptedManifestSha256: accepted.hash, cases: [...names], mutation, failure, reports };
   await writeFile(join(artifact, 'report.json'), JSON.stringify(report, null, 2) + '\n');
   await writeReview(artifact, report);
   console.log(`Review accepted / preliminary / differences: ${artifact}/index.html`);
 }
-if (failure || reports.length !== names.size || reports.some(report => !report.pass)) {
+if (environmentChanged || failure || reports.length !== names.size || reports.some(report => !report.pass)) {
   throw new Error(`Visual run failed; inspect ${artifact}/report.json${failure ? `: ${failure}` : ''}`);
 }
 console.log(`${reports.length} visual cases match accepted baselines.`);

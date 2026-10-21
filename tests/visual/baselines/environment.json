@@ -1,6 +1,6 @@
 {
-  "environment": "debian-bookworm-20250615-node22.16-vscode1.100.3-x64",
-  "vscode": "1.100.3",
+  "environment": "debian-bookworm-20250615-node22.16-vscode1.142.0-x64",
+  "vscode": "1.142.0",
   "node": "v22.16.0",
   "font": "DejaVu Sans Mono",
   "fontSize": 16,

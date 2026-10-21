@@ -30,7 +30,7 @@ export async function connect(port) {
   };
 }
 
-export async function captureEditor(cdp, width, mutation, theme, scrollRight = false) {
+export async function captureEditor(cdp, width, mutation, theme, scrollRight = false, onUnstable) {
   await cdp.command('Emulation.setDeviceMetricsOverride', { width, height: 800, deviceScaleFactor: 1, mobile: false });
   await cdp.command('Runtime.evaluate', { expression: `(() => {
     if (!document.getElementById('mic-visual-style')) {
@@ -84,17 +84,28 @@ export async function captureEditor(cdp, width, mutation, theme, scrollRight = f
   }
   const clip = layout.result.value;
   if (!clip || clip.width < 100 || clip.height < 100) throw new Error(`Invalid editor clip: ${JSON.stringify(clip)}`);
-  let previous;
+  return captureStableFrames(cdp, clip, onUnstable);
+}
+
+export async function captureStableFrames(cdp, clip, onUnstable) {
+  const started = Date.now();
+  const frames = [];
   let matches = 0;
-  for (let attempt = 0; attempt < 15; attempt++) {
+  // A fixed frame count exhausted in under two seconds on CI while sidebar,
+  // minimap and scrollbar transitions were still painting. Bound elapsed time
+  // instead; return as soon as three actual screenshots agree, without sleeping
+  // for an arbitrary duration or weakening the pixel comparison.
+  while (Date.now() - started < 8000) {
     await cdp.command('Runtime.evaluate', { expression: 'new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))', awaitPromise: true });
     const { data } = await cdp.command('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: false });
     const image = Buffer.from(data, 'base64');
-    matches = previous?.equals(image) ? matches + 1 : 0;
+    matches = frames.at(-1)?.equals(image) ? matches + 1 : 0;
+    frames.push(image);
+    if (frames.length > 3) frames.shift();
     if (matches >= 2) return image;
-    previous = image;
   }
-  throw new Error('Editor pixels did not stabilize across three captures');
+  if (onUnstable) await onUnstable(frames);
+  throw new Error('Editor pixels did not stabilize across three consecutive captures within 8 seconds');
 }
 
 export async function editorLayout(cdp) {

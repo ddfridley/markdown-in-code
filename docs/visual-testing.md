@@ -1,10 +1,16 @@
 # Screenshot regression tests and human review
 
-Current accepted set: **31 images**, explicitly approved by the user from run `1792606161082` on October 21, 2026. This includes bullet/frame alignment, the explanatory literal-dash row, decorative `/***` openers and line-height-based headings with default `markdownInCode.fontFitAllowance: 1.208421`. Earlier run counts below are historical. No later captures are accepted automatically.
+Current accepted set: **31 images**, explicitly approved by David Fridley from run `1792623295966` on October 21, 2026, including the screenshot environment migration from VS Code **1.100.3 to 1.142.0**. The accepted environment and image hashes are recorded in `tests/visual/baselines/accepted.json`; earlier approvals remain in its history. Docker, capture metadata and version assertions pin the new version. Setup closes the auxiliary sidebar so its default state cannot change the editor width. Wrapped-heading geometry checks require the native viewport path and verify its fallback. The extension's minimum supported VS Code version and platform integration matrix are unchanged.
+
+Post-acceptance verification: typecheck/build, 115 unit tests and the independent heading-contract mutation check pass. Fresh Docker run `1792624144052` matches 30 of 31 accepted images. `headings-wrapped-light` differs by 2,856 pixels at the bottom horizontal scrollbar; its text and centered fence label match. This newer image is not approved or accepted. Visual mutation checks correctly stop at this failing preflight. Review [the new comparison](../tests/visual/preliminary/1792624144052/index.html) if the same issue occurs in GitHub; do not regenerate expectations to make it pass.
+
+For a future environment migration, `npm run test:visual:docker -- --review-environment` generates a marked candidate run without modifying accepted files. It always fails while the environment differs, even if pixels match. Review all images and both environment snapshots before explicitly approving the migration. Ordinary comparison rejects mismatched metadata; ordinary acceptance also rejects a different environment. Environment migration requires deliberate validation of the complete reviewed run, its hashes and every existing accepted case before recording the new metadata and approval.
 
 The link slice's 23 images were approved on October 20, 2026, from run 1792520725803 and committed as cd69445. The current table slice expands coverage to 29 cases. [Run 1792524599284](../tests/visual/preliminary/1792524599284/index.html) contains all 29 images explicitly approved by the user on October 20, 2026. Those exact images are now accepted; future changed/new output still requires separate review.
 
 Screenshot tests compare newly generated pixels against human-accepted images. A changed or missing accepted image fails the test. Generating a screenshot never accepts it.
+
+Capture waits for three consecutive identical screenshots, with an eight-second deadline rather than a fixed attempt count. It advances through browser animation frames and returns immediately when stable; it does not sleep for eight seconds. If motion persists, capture fails and saves the last three raw frames as `CASE.unstable-1.png` through `CASE.unstable-3.png`, plus `CASE.layout.json`, in the preliminary run directory. These diagnostic frames are not accepted images. This addresses the short settling-window failure in GitHub run `39688193868`; it does not change comparisons or fix the legacy renderer's separate overflow-centering limitation.
 
 ## Capture and compare
 
@@ -76,7 +82,7 @@ The Linux amd64 Docker environment pins the Node image digest, Debian dependency
 
 Only the editor rectangle is captured; measured scrollbar/overview-ruler bounds are excluded. Capture-only CSS hides the cursor and notifications. The suite waits for decoration completion, theme/font paint and three identical captures. It does not approve images based on a sleep.
 
-Pixelmatch uses color threshold 0.1, includes antialiasing changes and allows zero differing pixels above that threshold. Missing images fail without being created as accepted files. Dimension mismatches produce a magenta diff canvas.
+Pixelmatch uses color threshold 0.1, includes antialiasing changes and allows zero differing pixels above that threshold. Missing images fail without being created as accepted files. Dimension mismatches still fail. Their diff compares the overlapping area at original coordinates: red marks changed pixels, magenta marks edges present in only one image, and matching pixels appear in faint grayscale. Images are never resized or shifted to hide differences.
 
 The seventeen cases cover frames in light/dark/narrow layouts, selected source, standalone groups, rules, fenced code with sidebar/minimap, heading hierarchy in light/dark/narrow/tight/wrapped layouts, and unordered lists in light/dark themes. Wrapped enlarged headings can overflow/clip because Monaco calculates wrap points at base font size; the preview records this known limitation. Extra fonts, zoom, high contrast, horizontal scrolling, complete wrapped frames, tables and more code languages still need coverage. Remote CI execution remains unverified.
 

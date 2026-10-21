@@ -41,7 +41,7 @@ async function capture(name: string, width = 1200, controlClick?: string, plainC
 }
 
 export async function run() {
-  assert.equal(vscode.version, '1.100.3');
+  assert.equal(vscode.version, '1.142.0');
   const workspace = vscode.workspace.workspaceFolders![0].uri.fsPath;
   const extension = vscode.extensions.all.find(value => value.packageJSON.name === 'markdown-in-code')!;
   api = await extension.activate() as TestApi;
@@ -58,6 +58,7 @@ export async function run() {
     });
   }
   await vscode.commands.executeCommand('workbench.action.closeSidebar');
+  await vscode.commands.executeCommand('workbench.action.closeAuxiliaryBar');
   await vscode.commands.executeCommand('workbench.action.closePanel');
   async function open(name: string) {
     const document = await vscode.workspace.openTextDocument(join(workspace, name));

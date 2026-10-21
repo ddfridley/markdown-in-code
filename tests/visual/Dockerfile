@@ -9,9 +9,9 @@ RUN rm -f /etc/apt/sources.list.d/debian.sources && \
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
-RUN node --input-type=module -e "import { downloadAndUnzipVSCode } from '@vscode/test-electron'; await downloadAndUnzipVSCode('1.100.3');"
+RUN node --input-type=module -e "import { downloadAndUnzipVSCode } from '@vscode/test-electron'; await downloadAndUnzipVSCode('1.142.0');"
 COPY . .
 RUN npm run build && ./node_modules/.bin/esbuild tests/visual/index.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/visual/index.cjs
-ENV MIC_VISUAL_ENVIRONMENT=debian-bookworm-20250615-node22.16-vscode1.100.3-x64
+ENV MIC_VISUAL_ENVIRONMENT=debian-bookworm-20250615-node22.16-vscode1.142.0-x64
 ENV LANG=C.UTF-8 TZ=UTC
 ENTRYPOINT ["xvfb-run", "-a", "-s", "-screen 0 1280x900x24", "node", "scripts/run-visual.mjs"]

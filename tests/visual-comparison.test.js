@@ -30,6 +30,25 @@ describe('visual approval gate', () => {
     expect(comparePng(PNG.sync.write(a), PNG.sync.write(b)).pass).toBe(false);
     expect(comparePng(PNG.sync.write(a), PNG.sync.write(blank(41))).reason).toContain('Dimensions');
   });
+  it('compares overlapping pixels and marks only unmatched edges for different dimensions', () => {
+    const expected = blank(3, 2);
+    const actual = blank(2, 3);
+    actual.data.set([0, 0, 0, 255], 0);
+    const result = comparePng(PNG.sync.write(expected), PNG.sync.write(actual));
+    const diff = PNG.sync.read(result.diff);
+    const pixel = (x, y) => [...diff.data.subarray(4 * (y * diff.width + x), 4 * (y * diff.width + x) + 4)];
+    expect(result.pass).toBe(false);
+    expect(result.pixels).toBe(1);
+    expect(result.unmatchedPixels).toBe(4);
+    expect(pixel(0, 0)).toEqual([255, 0, 0, 255]);
+    expect(pixel(1, 1)).toEqual([255, 255, 255, 255]);
+    expect(pixel(2, 0)).toEqual([255, 0, 255, 255]);
+    expect(pixel(0, 2)).toEqual([255, 0, 255, 255]);
+    expect(pixel(2, 2)).toEqual([255, 255, 255, 255]);
+    const identicalOverlap = comparePng(PNG.sync.write(expected), PNG.sync.write(blank(2, 2)));
+    expect(identicalOverlap.pixels).toBe(0);
+    expect(identicalOverlap.pass).toBe(false);
+  });
   it('fails missing baselines without creating an expected file', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'mic-visual-'));
     try {
