@@ -38,17 +38,19 @@ describe('heading row budget', () => {
     expect(sizes[0]).toBeGreaterThan(sizes[1]);
     expect(sizes[1]).toBeGreaterThan(sizes[2]);
     expect(sizes[2]).toBeGreaterThan(sizes[3]);
-    expect(sizes).toEqual([24, 20, 16, 15.2, 14.4, 13.6]);
-    expect(result.levels.map(value => value.relativeSize)).toEqual(['150%', '125%', '100%', '95%', '90%', '85%']);
+    expect(sizes).toEqual([29, 24.2, 19.3, 18.4, 17.3, 16.4]);
+    expect(result.levels.map(value => value.relativeSize)).toEqual(['181%', '151%', '120%', '115%', '108%', '103%']);
     expect(result.levels.map(value => value.fontWeight)).toEqual(['800', '700', '600', '600', '500', '400']);
   });
   it('handles platform defaults, multiplier heights and tight rows explicitly', () => {
     expect(headingLayout(16, 0, 'linux').lineHeight).toBe(24);
     expect(headingLayout(16, 0, 'win32').lineHeight).toBe(22);
     expect(headingLayout(16, 2, 'win32').lineHeight).toBe(32);
-    expect(headingLayout(16, 16, 'linux').levels.map(value => value.fontSize)).toEqual([24, 20, 16, 15.2, 14.4, 13.6]);
-    expect(headingLayout(16, 48, 'linux').levels[0].fontSize).toBe(24);
-    expect(headingLayout(20, 20, 'win32').levels.map(value => value.relativeSize)).toEqual(['150%', '125%', '100%', '95%', '90%', '85%']);
-    expect(headingLayout(14, 0, 'win32').levels[0].relativeSize).toBe('150%');
+    expect(headingLayout(16, 16, 'linux').levels.map(value => value.fontSize)).toEqual([19.3, 16.2, 12.9, 12.3, 11.6, 11]);
+    expect(headingLayout(16, 48, 'linux').levels[0].fontSize).toBe(58);
+    expect(headingLayout(20, 20, 'win32').levels.map(value => value.relativeSize)).toEqual(['121%', '101%', '80%', '77%', '72%', '69%']);
+    expect(headingLayout(14, 0, 'win32').levels[0].relativeSize).toBe('164%');
+    expect(headingLayout(16, 24, 'linux', 1).levels[0].fontSize).toBe(24);
+    for (const invalid of [0, -1, NaN, Infinity]) expect(headingLayout(16, 24, 'linux', invalid).levels[0].relativeSize).toBe('181%');
   });
 });

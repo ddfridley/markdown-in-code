@@ -325,13 +325,22 @@ export async function run(): Promise<void> {
         await settings.update('wordWrap', 'off', vscode.ConfigurationTarget.Workspace);
         await settings.update('fontSize', 16, vscode.ConfigurationTarget.Workspace);
         await settings.update('lineHeight', 32, vscode.ConfigurationTarget.Workspace);
-        const enlarged = await waitFor(editor, state => state.headingSizes[0] === 24);
+        const enlarged = await waitFor(editor, state => state.headingSizes[0] === 38.7);
         assert.equal(enlarged.version, document.version);
         await settings.update('lineHeight', 16, vscode.ConfigurationTarget.Workspace);
-        await waitFor(editor, state => state.headingSizes[0] === 24 && state.headingSizes[1] === 20);
+        await waitFor(editor, state => state.headingSizes[0] === 19.3 && state.headingSizes[1] === 16.2);
         await settings.update('lineHeight', 32, vscode.ConfigurationTarget.Workspace);
         await settings.update('wordWrap', 'on', vscode.ConfigurationTarget.Workspace);
-        await waitFor(editor, state => state.headingSizes[0] === 24 && state.headingSizes[1] === 20);
+        await waitFor(editor, state => state.headingSizes[0] === 38.7 && state.headingSizes[1] === 32.3);
+        const headingSettings = vscode.workspace.getConfiguration('markdownInCode');
+        const originalAllowance = headingSettings.inspect('fontFitAllowance')?.workspaceValue;
+        try {
+          await headingSettings.update('fontFitAllowance', 1, vscode.ConfigurationTarget.Workspace);
+          await waitFor(editor, state => state.headingSizes[0] === 32);
+        } finally {
+          await headingSettings.update('fontFitAllowance', originalAllowance, vscode.ConfigurationTarget.Workspace);
+        }
+        await waitFor(editor, state => state.headingSizes[0] === 38.7);
         assert.equal(document.getText(), source);
         assert.equal(document.isDirty, false);
         await vscode.commands.executeCommand('markdownInCode.toggle');

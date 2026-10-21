@@ -102,6 +102,8 @@ export async function run() {
   await capture('horizontal-rules-light');
   await open('unordered-lists.ts');
   await capture('unordered-lists-light');
+  await open('list-insets.ts');
+  await capture('list-insets-light');
   await open('ordered-tasks.ts');
   await capture('ordered-tasks-light');
   await open('blockquotes.ts');
@@ -127,16 +129,16 @@ export async function run() {
   const headings = await open('headings.ts');
   await capture('headings-light');
   await capture('headings-narrow-light', 850);
-  const tight = applied(headings, state => state.headingSizes[0] === 24 && state.headingSizes[1] === 20);
+  const tight = applied(headings, state => state.headingSizes[0] === 19.3 && state.headingSizes[1] === 16.2);
   await vscode.workspace.getConfiguration('editor').update('lineHeight', 16, vscode.ConfigurationTarget.Global);
   await tight;
   await capture('headings-tight-light');
-  const normal = applied(headings, state => state.headingSizes[0] > 16);
+  const normal = applied(headings, state => state.headingSizes[0] === 29);
   await vscode.workspace.getConfiguration('editor').update('lineHeight', 24, vscode.ConfigurationTarget.Global);
   await normal;
   const wrapped = await open('headings-wrap.ts');
   const wrapSequence = api.snapshot(wrapped)!.sequence;
-  const wrapReady = applied(wrapped, state => state.sequence > wrapSequence && state.headingSizes[0] === 24 && state.headingSizes[1] === 20);
+  const wrapReady = applied(wrapped, state => state.sequence > wrapSequence && state.headingSizes[0] === 29 && state.headingSizes[1] === 24.2);
   await vscode.workspace.getConfiguration('editor').update('wordWrap', 'on', vscode.ConfigurationTarget.Global);
   await wrapReady;
   await vscode.commands.executeCommand('workbench.view.explorer');
@@ -167,6 +169,8 @@ export async function run() {
   await capture('headings-dark');
   await open('unordered-lists.ts');
   await capture('unordered-lists-dark');
+  await open('list-insets.ts');
+  await capture('list-insets-dark');
   await open('ordered-tasks.ts');
   await capture('ordered-tasks-dark');
   await open('blockquotes.ts');

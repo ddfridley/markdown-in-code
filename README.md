@@ -4,13 +4,13 @@ An experimental VS Code extension for Markdown in JavaScript/TypeScript comments
 
 ## Install locally for everyday testing
 
-The private extension ID is `local.markdown-in-code`, version `0.0.1`. Build and install from Git Bash using the repository's NVS setup:
+The private extension ID is `local.markdown-in-code`, version `0.0.2`. Build and install from Git Bash using the repository's NVS setup:
 
 ```sh
 source ./.bashrc
 npm ci
 npm run package:local
-code --install-extension ./markdown-in-code-0.0.1.vsix --force
+code --install-extension ./markdown-in-code-0.0.2.vsix --force
 ```
 
 Run **Developer: Reload Window** in your normal VS Code window after installation. F5 is unnecessary for everyday use. Node/NVS is needed for development and the demo; the installed extension bundles its runtime dependencies.
@@ -27,6 +27,14 @@ The package includes the bundled extension, demo, documentation and third-party 
 
 ## Feature tour
 
+Heading sizes adapt to `editor.fontSize` and `editor.lineHeight`. H1 size equals effective line height times `markdownInCode.fontFitAllowance` (default `1.208421`); lower levels keep their proportions. You can calibrate this in User or Workspace settings, for example:
+
+```json
+"markdownInCode.fontFitAllowance": 1.208421
+```
+
+An allowance of `1` makes H1 font size equal the line height. Font metrics and underlines vary, so the calculation does not guarantee no overlap. Automatic line height (`0`) uses a platform estimate. See [heading layout](docs/headings.md).
+
 Open [demo.ts](demo.ts) in the F5 development window for a working-feature tour, with layered Node HTTP functions documented using the [md-comments function template](../md-comments/README.md#function-documentation-template). Put the cursor outside comments to render them. To run the server with the repository's Node 24 version, use Git Bash:
 
 ```sh
@@ -34,7 +42,7 @@ source ./.bashrc
 node demo.ts
 ```
 
-Open the printed URL (normally `http://127.0.0.1:3000/`); Ctrl+C stops the server. Optional `HOST`, `PORT` and `GREETING` environment variables configure it. `PORT=0 node demo.ts` requests an available port. The demo needs no extra dependencies and is included in the normal TypeScript check.
+Open the printed URL (normally `http://127.0.0.2:3000/`); Ctrl+C stops the server. Optional `HOST`, `PORT` and `GREETING` environment variables configure it. `PORT=0 node demo.ts` requests an available port. The demo needs no extra dependencies and is included in the normal TypeScript check.
 
 The prototype renders inline formatting, headings, horizontal rules, lists, task boxes, blockquotes and links in code comments. Clicking or selecting a comment reveals its source. Run **Markdown in Code: Toggle Rendering** to toggle formatting globally. These interactions have unit, extension-host and screenshot coverage.
 
@@ -76,7 +84,7 @@ Open this directory in VS Code and press F5 to launch the extension development 
 
 If F5 reports that the extension host did not start in 10 seconds, use **Terminal > Run Task > Preview Markdown in Code**. This builds the extension and opens the fixture in a development window without debugger attachment. The local debugger trace has shown connection failures to its loopback debug port; this preview task bypasses that startup path. Breakpoints require a working debug launch and are unavailable through this task.
 
-F5 now starts the development host with `--inspect-extensions=9333` and then attaches a Node debugger to `127.0.0.1:9333`. The launch task polls the inspector endpoint before attaching. This avoids the early startup pause used by the standard extension-host debug launch, which crashed with exit code 134 locally after the VS Code update. Removing the default Node-internals skip rule did not resolve that crash. The new host launch and inspector availability have been verified; F5 attachment still needs confirmation. The launcher records the inspector's target ID in the ignored `.vscode/debug-host.json` and reuses a matching running host on subsequent launches. Reload that development window to load rebuilt extension code, or close it before F5 for a fresh host. An unrecognized inspector on port 9333 still produces a port-in-use error. The launcher script currently requires Windows PowerShell.
+F5 now starts the development host with `--inspect-extensions=9333` and then attaches a Node debugger to `127.0.0.2:9333`. The launch task polls the inspector endpoint before attaching. This avoids the early startup pause used by the standard extension-host debug launch, which crashed with exit code 134 locally after the VS Code update. Removing the default Node-internals skip rule did not resolve that crash. The new host launch and inspector availability have been verified; F5 attachment still needs confirmation. The launcher records the inspector's target ID in the ignored `.vscode/debug-host.json` and reuses a matching running host on subsequent launches. Reload that development window to load rebuilt extension code, or close it before F5 for a fresh host. An unrecognized inspector on port 9333 still produces a port-in-use error. The launcher script currently requires Windows PowerShell.
 
 ## Adapter boundary
 
@@ -92,7 +100,7 @@ Selective adaptation is the chosen reuse strategy: keep extraction, mapping, par
 
 Unit tests cover comment extraction and computed ranges. `npm run test:integration` runs real VS Code extension-host behavior checks. The separate pinned Linux screenshot harness checks painted editor output. See [testing instructions](docs/testing.md) for the test applications, isolated sessions and CI configuration.
 
-The screenshot harness is now available: `npm run test:visual:docker` compares twenty-nine editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Tests write separate preliminary images and leave accepted images read-only. Changed/missing images fail until interactive human acceptance; automatic updates are disabled.
+The screenshot harness is now available: `npm run test:visual:docker` compares thirty-one editor captures in a pinned Linux container. See the [visual testing guide and baseline review gallery](docs/visual-testing.md). Tests write separate preliminary images and leave accepted images read-only. Changed/missing images fail until interactive human acceptance; automatic updates are disabled.
 
 Phase 2's [behavior contract](docs/behavior.md) specifies comment types, selection boundaries, multiple carets, split editors, toggling, cache updates, and the raw presentation of deferred Markdown features. Use `tests/fixtures/behavior.ts` for its manual checks.
 

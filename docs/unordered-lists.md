@@ -6,6 +6,10 @@ Ordered lists and task lists have [separate behavior and fixtures](ordered-tasks
 
 Clicking or selecting a comment reveals its complete source. Leaving restores bullets; toggling and editing while toggled off follow the existing behavior. Soft-wrapped continuation rows retain the existing frame/inset limitations; this feature does not implement HTML list layout.
 
+Bullet attachments are registered after comment frames, like ordered/task markers. When a marker shares the frame anchor, this keeps it inside the frame's two-column inset without moving the item text or consuming its following space. Regression fixture `tests/visual/fixtures/list-insets.ts` covers unprefixed block comments and star-prefixed rows with increasing source indentation, based on `md-comments/test.ts` lines 24–28 and 209–213. Markdown determines whether an indented marker is a nested item, a sibling or literal code; indentation alone does not override those parsing rules.
+
+The alignment fix, decorative opener and calibrated heading scale are approved in screenshot run `1792606161082` (31 images). Validation passes 112 unit tests and 26 integration checks. The list-insets fixture explains why its four-space dash remains literal.
+
 ## Manual check
 
 Reload F5 and open `tests/fixtures/unordered-lists.ts`.

@@ -160,7 +160,7 @@ export function activate(context: vscode.ExtensionContext) {
       margin: '0 -100vw 0.3em 0'
     } }
   };
-  const types = new Map(Object.entries(options).map(([style, value]) => [style as Style, vscode.window.createTextEditorDecorationType({ ...value, rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed })]));
+  const types = new Map(Object.entries(options).filter(([style]) => style !== 'listMarker').map(([style, value]) => [style as Style, vscode.window.createTextEditorDecorationType({ ...value, rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed })]));
   context.subscriptions.push(...types.values());
   const headingGroups = new Map<string, vscode.TextEditorDecorationType[]>();
   context.subscriptions.push({ dispose: () => { for (const group of headingGroups.values()) group.forEach(type => type.dispose()); } });
@@ -187,6 +187,11 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(boxHidden, boxFrame, boxRule);
   // Register additional marker types after existing frame/inline types: Monaco
   // orders coincident attachments by decoration identity, affecting the inset.
+  // Bullets can share the frame's anchor too, including at column zero. Creating
+  // them before the frame places them outside its inset while text stays put.
+  const listType = vscode.window.createTextEditorDecorationType({ ...options.listMarker, rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed });
+  types.set('listMarker', listType);
+  context.subscriptions.push(listType);
   for (const style of ['orderedMarker', 'taskMarker'] as const) {
     const type = vscode.window.createTextEditorDecorationType({ color: 'transparent', rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed });
     types.set(style, type);
@@ -382,7 +387,8 @@ export function activate(context: vscode.ExtensionContext) {
     const config = vscode.workspace.getConfiguration('editor', document);
     const fontSize = config.get<number>('fontSize', 14);
     const configuredHeight = config.get<number>('lineHeight', 0);
-    const { lineHeight, levels } = headingLayout(fontSize, configuredHeight, process.platform);
+    const allowance = vscode.workspace.getConfiguration('markdownInCode', document).get<number>('fontFitAllowance', 1.208421);
+    const { lineHeight, levels } = headingLayout(fontSize, configuredHeight, process.platform, allowance);
     headingSizes = levels.map(value => value.fontSize);
     const nextHeadingKey = JSON.stringify(levels);
     let headingTypes = headingGroups.get(nextHeadingKey);
@@ -780,7 +786,7 @@ export function activate(context: vscode.ExtensionContext) {
     }),
     vscode.window.onDidChangeTextEditorOptions(event => update(event.textEditor)),
     vscode.window.onDidChangeActiveColorTheme(updateVisible),
-    vscode.workspace.onDidChangeConfiguration(event => { if (event.affectsConfiguration('editor.fontSize') || event.affectsConfiguration('editor.lineHeight') || event.affectsConfiguration('editor.wordWrap')) updateVisible(); }),
+    vscode.workspace.onDidChangeConfiguration(event => { if (event.affectsConfiguration('editor.fontSize') || event.affectsConfiguration('editor.lineHeight') || event.affectsConfiguration('editor.wordWrap') || event.affectsConfiguration('markdownInCode.fontFitAllowance')) updateVisible(); }),
     vscode.workspace.onDidOpenTextDocument(updateVisible),
     /**
      * ## onDocumentChanged(event) ⇒ {void}

@@ -15,7 +15,7 @@ for (const mutation of ['missing-border', 'offset', 'heading-size']) {
   const created = (await readdir(artifacts)).filter(name => !before.has(name) && name.endsWith('-mutation'));
   if (created.length !== 1) throw new Error('Expected exactly one mutation artifact directory');
   const report = JSON.parse(await readFile(resolve(artifacts, created[0], 'report.json'), 'utf8'));
-  if (report.failure || report.reports.length !== 29 || report.mutation !== mutation || !report.reports.some(result => result.pixels > 0 && !result.pass)) {
+  if (report.failure || report.reports.length !== 31 || report.mutation !== mutation || !report.reports.some(result => result.pixels > 0 && !result.pass)) {
     throw new Error(`Mutation did not fail through an actual pixel comparison: ${JSON.stringify(report)}`);
   }
   console.log(`PASS: ${mutation} was rejected with reviewable pixel diffs.`);

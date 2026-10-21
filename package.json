@@ -1,7 +1,7 @@
 {
   "name": "markdown-in-code",
   "publisher": "local",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "Experimental inline Markdown formatting in JavaScript and TypeScript comments.",
   "keywords": [
@@ -68,6 +68,18 @@
     "onLanguage:typescriptreact"
   ],
   "contributes": {
+    "configuration": {
+      "title": "Markdown in Code",
+      "properties": {
+        "markdownInCode.fontFitAllowance": {
+          "type": "number",
+          "default": 1.208421,
+          "exclusiveMinimum": 0,
+          "scope": "resource",
+          "description": "Heading font-fit calibration. H1 size equals editor line height multiplied by this allowance; lower levels retain their proportions. This is not a guarantee against overlap for every font."
+        }
+      }
+    },
     "commands": [
       {
         "command": "markdownInCode.openLink",

@@ -1,5 +1,7 @@
 # Block-comment frames
 
+Delimiter-only opening rows may use extra stars, such as `/***`. These stars are hidden with the opening delimiter and the row becomes the top corner and horizontal rule. Asterisks in body text and same-line emphasis remain Markdown content. Regression tests cover LF/CRLF and bold text immediately below the opener; the manual example is `md-comments/test.ts` line 239.
+
 Rendered block comments now hide their source delimiters and structural prefixes and display an open-right frame:
 
 ```text

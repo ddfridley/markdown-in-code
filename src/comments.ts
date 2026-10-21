@@ -86,7 +86,11 @@ export function extractComments(source: string, fileName = 'source.ts'): Comment
     return !literal || range.end <= literal.start;
   }).map(range => {
     const block = range.kind === ts.SyntaxKind.MultiLineCommentTrivia;
-    const start = range.pos + (block && /^\/\*\*(?:\s|\/)/.test(source.slice(range.pos, range.end)) ? 3 : 2);
+    // Extra stars on a delimiter-only opening row are decorative syntax, not
+    // Markdown content. Restrict this to an otherwise empty row so inline
+    // emphasis (for example /* **bold** */) retains its original mapping.
+    const openingStars = block ? /^\/\*{2,}(?=[\t ]*\r?(?:\n|$))/.exec(source.slice(range.pos, range.end)) : null;
+    const start = range.pos + (openingStars?.[0].length ?? (block && /^\/\*\*(?:\s|\/)/.test(source.slice(range.pos, range.end)) ? 3 : 2));
     const closed = block && source.slice(range.end - 2, range.end) === '*/';
     const end = closed ? range.end - 2 : range.end;
     const openingLineStart = source.lastIndexOf('\n', range.pos - 1) + 1;

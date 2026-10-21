@@ -2,9 +2,11 @@
 
 ## Current release scope and hardening
 
+October 21, 2026 local testing update: user explicitly approved all 31 images from run `1792606161082`. Those exact images are accepted, and all 31 cases match on recheck. Version `0.0.2` includes corrected unordered bullet/frame ordering, decorative `/***` opening rows, and line-height-based headings with configurable `markdownInCode.fontFitAllowance` defaulting to `1.208421`. H1 equals effective line height times the allowance; lower levels retain the agreed proportions. This supersedes earlier fixed-size and pending-review notes. Validation passes 112 unit tests, 26 integration checks, native Ctrl+click/Escape checks, heading mutation detection and the isolated installed-VSIX smoke test. The new VSIX is installed in the normal laptop profile and verified as `local.markdown-in-code@0.0.2`; reload the normal window to use it. All three visual mutation checks pass: missing-border, offset and heading-size regressions are rejected with pixel diffs. Accepted images remain the exact human-approved run.
+
 The next milestone is a private local testing release on this laptop, not another Markdown feature slice. The existing JavaScript/TypeScript/JSX/TSX features and Escape interaction are the release scope. **Embedded HTML-comment presentation, images/richer blocks and additional source languages are deferred to a future release.** This decision supersedes historical next-slice entries below. HTML/image syntax keeps its current literal behavior; standalone Markdown remains out of scope.
 
-The local package uses `local.markdown-in-code` version `0.0.1`. `local` is a private testing namespace, not a registered Marketplace publisher. Keep npm `private: true`; no publishing or account creation is authorized by local installation.
+The local package uses `local.markdown-in-code` version `0.0.2`. `local` is a private testing namespace, not a registered Marketplace publisher. Keep npm `private: true`; no publishing or account creation is authorized by local installation.
 
 ### Local package and installation
 
@@ -12,7 +14,7 @@ The local package uses `local.markdown-in-code` version `0.0.1`. `local` is a pr
 - [x] Include the project MIT license, architectural credit and license/notice texts for every bundled runtime dependency.
 - [x] Exclude node_modules, test apps, screenshots, preliminary images, development settings, source maps and local state from the VSIX.
 - [x] Smoke-test the installed VSIX in an isolated profile, including production activation, bundled parsing/link discovery, Escape and toggle commands.
-- [x] Install into the normal laptop profile and verify `local.markdown-in-code@0.0.1`.
+- [x] Install into the normal laptop profile and verify `local.markdown-in-code@0.0.2`.
 - [ ] Reload the normal VS Code window and manually test without F5.
 - [ ] Check for an older Markdown-in-comments renderer affecting the same JS/TS files. Keep MIEV for standalone Markdown; choose one active comment renderer when comparing results.
 - [x] Document rebuild/reinstall, version increments and rollback/uninstall in README.
@@ -24,7 +26,7 @@ Packaging verification: 110 unit tests, typecheck/build and 26 integration check
 
 - [ ] Run the configured Windows/macOS/Linux CI and inspect uploaded failures; authored workflows alone do not establish cross-platform success.
 - [ ] Re-run unit/type/build, integration, actual Escape/Ctrl+click, heading-contract mutation and visual mutation suites from a clean checkout.
-- [ ] Require all 29 accepted visual cases to match. Investigate the transient horizontal-scrollbar capture before treating it as a stable regression; retain human approval for any pixel changes.
+- [ ] Require all 31 accepted visual cases to match. Investigate the transient horizontal-scrollbar capture before treating it as a stable regression; retain human approval for any pixel changes.
 - [ ] Test normal installed mode alongside F5/Test mode: commands, opening/reopening documents, edits, saves/undo/redo, selection, multiple carets and split groups.
 - [ ] Exercise long comments, large files, rapid typing/navigation and many open editors. Measure parse/decorate latency, memory and timer/cache cleanup before optimizing.
 - [ ] Check light/dark/high-contrast themes, font families/sizes/ligatures, zoom, tabs, LF/CRLF, minimap, sidebars, narrow views and horizontal scrolling.

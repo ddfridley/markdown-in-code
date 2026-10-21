@@ -1,5 +1,8 @@
 {
-  "relativeSizes": ["150%", "125%", "100%", "95%", "90%", "85%"],
+  "relativeSizes": ["164%", "137%", "109%", "104%", "98%", "93%"],
   "fontWeights": ["800", "700", "600", "600", "500", "400"],
-  "policy": "Full hierarchy remains active regardless of line height and word wrap. Changes require explicit human agreement."
+  "fontFitAllowance": 1.208421,
+  "referenceFontSize": 16,
+  "referenceLineHeight": 24,
+  "policy": "H1 pixel size is effective line height times fontFitAllowance. Other levels retain the reference proportions; wrap does not change them. Changes require explicit human agreement."
 }

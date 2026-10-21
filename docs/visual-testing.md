@@ -1,5 +1,7 @@
 # Screenshot regression tests and human review
 
+Current accepted set: **31 images**, explicitly approved by the user from run `1792606161082` on October 21, 2026. This includes bullet/frame alignment, the explanatory literal-dash row, decorative `/***` openers and line-height-based headings with default `markdownInCode.fontFitAllowance: 1.208421`. Earlier run counts below are historical. No later captures are accepted automatically.
+
 The link slice's 23 images were approved on October 20, 2026, from run 1792520725803 and committed as cd69445. The current table slice expands coverage to 29 cases. [Run 1792524599284](../tests/visual/preliminary/1792524599284/index.html) contains all 29 images explicitly approved by the user on October 20, 2026. Those exact images are now accepted; future changed/new output still requires separate review.
 
 Screenshot tests compare newly generated pixels against human-accepted images. A changed or missing accepted image fails the test. Generating a screenshot never accepts it.

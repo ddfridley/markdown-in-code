@@ -6,6 +6,21 @@ import { RenderingSession } from '../src/rendering';
 
 describe('block-comment frames', () => {
   for (const eol of ['\n', '\r\n']) {
+    it(`frames decorative opening stars while preserving bold text with ${JSON.stringify(eol)}`, () => {
+      const source = ['/*** ', '**there is still rendering going on** and more text', '*/'].join(eol);
+      const regions = extractComments(source);
+      expect(regions[0].markdown).toBe('\n**there is still rendering going on** and more text\n');
+      const boxes = buildBoxes(source, regions);
+      expect(boxes.map(box => box.kind)).toEqual(['top', 'content', 'bottom']);
+      expect(boxes[0].text).toBe('┌');
+      expect(boxes[0].ruleAnchor).toBe(boxes[0].anchor);
+      expect(source.slice(boxes[0].hidden[0].start, boxes[0].hidden[0].end)).toBe('/*** ');
+      expect(parseComments(source).filter(item => item.style === 'strong').map(item => source.slice(item.start, item.end))).toEqual(['there is still rendering going on']);
+      const inline = '/* **bold** */';
+      expect(extractComments(inline)[0].markdown.trim()).toBe('**bold**');
+    });
+  }
+  for (const eol of ['\n', '\r\n']) {
     it(`normalizes mixed prefixes and maps the frame with ${JSON.stringify(eol)}`, () => {
       const source = ['/**', ' * **one**', '* *two*', '// three', 'four', ' */'].join(eol);
       const regions = extractComments(source);
